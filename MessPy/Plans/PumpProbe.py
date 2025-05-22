@@ -68,6 +68,7 @@ class PumpProbePlan(Plan):
                 )
             )
             c.set_shots(self.shots)
+        
 
     def move_rot_stage(self, angle):
         if self.use_rot_stage:
@@ -130,7 +131,6 @@ class PumpProbePlan(Plan):
     def make_step_gen(self):
         c = self.controller
         rs = self.controller.rot_stage
-
         while True:
             yield from self.pre_scan()
             yield from self.scan()
@@ -155,13 +155,16 @@ class PumpProbePlan(Plan):
             for ppd in self.cam_data:
                 f.create_dataset("wl_" + ppd.cam.name, data=ppd.wavelengths)
             f.create_dataset("t", data=self.t_list)
-            f.create_dataset("rot", data=self.rot_at_scan)
+            
 
     def save(self):
         logger.info(f"Saving to {self.data_file}")
         self.save_meta()
 
         with self.data_file as f:
+            # If file empty
+            if len(f.keys()) == 0:
+                self.create_file()
             for ppd in self.cam_data:
                 if (name := "data_" + ppd.cam.name) in f:
                     del f[name]
