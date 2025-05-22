@@ -168,6 +168,8 @@ class AOMTwoDViewer(QWidget):
     @Slot(dict)
     def update_diag_plots(self, spectra: dict[str, Spectrum]):
         for i, (name, spec) in enumerate(spectra.items()):
+            if name == 'back_line':
+                continue
             self.diag_lines[name].setData(spec.mean)
 
     @Slot()
