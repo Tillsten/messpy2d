@@ -163,7 +163,7 @@ class PumpProbePlan(Plan):
 
         with self.data_file as f:
             # If file empty
-            if len(f.keys()) == 0:
+            if "t" not in f:
                 self.create_file()
             for ppd in self.cam_data:
                 if (name := "data_" + ppd.cam.name) in f:
