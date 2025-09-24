@@ -22,22 +22,24 @@ class ShaperControl(QtWidgets.QWidget):
     rs1: RotationStage = attr.ib()
     rs2: RotationStage = attr.ib()
     aom: AOM = attr.ib()
-    folding_mirror_1 : RotationStage|None = None
-    folding_mirror_2 : RotationStage|None = None
+    folding_mirror_1 : RotationStage|None = attr.ib()
+    folding_mirror_2 : RotationStage|None = attr.ib()
 
     def __attrs_post_init__(self):
         super(ShaperControl, self).__init__()
         self.setWindowTitle("Shaper Controls")
         preset = [-1, -0.1, -0.01] + [0.01, 0.1, 1][::-1]
         rot_stages: list[RotationStage] = [self.rs1, self.rs2]
-        if self.folding_mirror1:
+        names = ["Grating 1", "Grating 2"]
+        if self.folding_mirror_1:
             assert self.folding_mirror_2 is not None
             rot_stages += [self.folding_mirror_1, self.folding_mirror_2]
+            names += ["FM 1", "FM2 2"]
         rot_controls = []
-        for rs in rot_stages:
+        for name, rs in zip(names, rot_stages):
             f = rs.move_relative    
             c1 = ControlFactory(
-                "Grating1",
+                name,
                 apply_fn=rs.set_degrees,
                 update_signal=rs.signals.sigDegreesChanged,
                 format_str="%.2f",

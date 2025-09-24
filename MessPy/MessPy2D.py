@@ -324,7 +324,9 @@ class CommandMenu(QWidget):
         from .ShaperRotStages import ShaperControl
 
         self.shaper_controls = ShaperControl(
-            sh.rot1, sh.rot2, sh, getattr(sh, "fm1", None), getattr(sh, "fm2", None)
+            sh.rot1, sh.rot2, sh, 
+            folding_mirror_1=getattr(sh, "fm1", None), 
+            folding_mirror_2=getattr(sh, "fm2", None)
         )
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)

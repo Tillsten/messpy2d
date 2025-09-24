@@ -81,8 +81,8 @@ elif pc_name == "DESKTOP-BBLLUO7":
         r2 = RotationStage(name="Grating2", comport="COM6")
         _shaper.rot1 = r1
         _shaper.rot2 = r2
-        f1 = RotationStage(name="Folding1", comport="COM4")
-        f2 = RotationStage(name="Folding2", comport="COM9")
+        f1 = RotationStage(name="Folding2", comport="COM9")
+        f2 = RotationStage(name="Folding1", comport="COM4")
         _shaper.fm1 = f1
         _shaper.fm2 = f2
     except Exception:
