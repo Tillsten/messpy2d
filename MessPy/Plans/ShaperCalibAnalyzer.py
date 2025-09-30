@@ -139,7 +139,7 @@ class CalibView(QWidget):
         self.analyze()
         self.fig.canvas.draw()
 
-    def analyze(self):
+    def analyze(self, area=10):
         self.prominence = self.sb_prom.value()
         self.distance = self.sb_dist.value()
         self.filter = self.sb_filter.value()
@@ -159,7 +159,6 @@ class CalibView(QWidget):
         self.ax0.cla()
         ppos = []
         for p in p0:
-            area = 10
             reg = abs(x - x[p]) < area
             data = y_train[reg]
             xr = x[reg]
@@ -184,9 +183,10 @@ class CalibView(QWidget):
         self.ax0.plot(self.x[p1], y_single[p1], "^", ms=7, c="r")
 
         self.ax0.plot(ppos, y_train[p0], "|", ms=7, c="r")
-        if len(p0) > 1 and len(p1) == 1:
+        if len(p0) > 1 and len(p1) > 1:
             import matplotlib.pyplot as plt
 
+            p1 = [p1[np.argmax(y_single[p1])]]
             a = np.arange(0, len(p0)) * self.dist
             same_peak_idx = np.argmin(abs(x[p0] - x[p1]))
             pix0 = self.single
