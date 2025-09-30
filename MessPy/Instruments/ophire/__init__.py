@@ -1,3 +1,5 @@
+import numpy as np
+from qtpy import QtWidgets, QtCore
 "Class implemting the IPowerMeter interface for the Starbright power meter"
 import attr
 from serial import Serial
@@ -12,7 +14,7 @@ class Starbright(IPowerMeter):
     Only read out is implemented. The power meter is connected via RS232.
     """
     name: str = 'Starbright'
-    _serial: Serial = Serial("COM9", baudrate=19200)
+    _serial: Serial = Serial("COM6", baudrate=19200)
 
     def read_power(self) -> float:
         self._serial.write(b"$SP\r\n")
@@ -22,5 +24,25 @@ class Starbright(IPowerMeter):
 
 
 if __name__ == '__main__':
+    import pyqtgraph as pg
+    import time
     s = Starbright()
-    print(s.read_power())
+    app = pg.mkQApp()
+    pw = pg.PlotWidget()
+    pw.show()
+    powers = []
+    times = []
+    l = pw.plot([])
+    t0 = time.time()
+    def update():
+        t = time.time() - t0
+        times.append(t)
+        p = s.read_power()*1000
+        powers.append(p)
+        l.setData(times, powers)
+        np.savetxt('power_vs_time', np.column_stack((times, powers)))
+
+    timer = pg.QtCore.QTimer()
+    timer.timeout.connect(update)
+    timer.start(1000)
+    app.exec()

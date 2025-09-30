@@ -2,9 +2,8 @@ import platform
 import sys
 from MessPy.Config import config
 from MessPy.Instruments.mocks import CamMock, DelayLineMock, StageMock, PowerMeterMock
-from loguru import logger
+import logging
 
-logger.info("Init HwRegistry")
 TESTING = config.testing
 _cam = None  # CamMock()
 _cam2 = None  # CamMock(name="Mock2")
@@ -14,9 +13,9 @@ _rot_stage = None
 _shutter = []
 _sh = None
 _shaper = None
+_power_meter = None
 
 pc_name = platform.node()
-
 if len(sys.argv) > 1:
     arg = sys.argv[1]
 else:
@@ -36,10 +35,14 @@ if pc_name == "DESKTOP-RMRQA8D":
 
     _dl = GeneratorDelayline()
 
+    #from MessPy.Instruments.delay_dg535 import GeneratorDelayline
+    _cam = AvaCam()
     _cam2 = None
-
-    # from MessPy.Instruments.delay_line_apt import DelayLine
-    # _dl = DelayLine(name="VisDelay")
+    #from MessPy.Instruments.delay_line_apt import DelayLine
+    #_dl = DelayLine(name="VisDelay")
+    from MessPy.Instruments.delay_line_newport import NewportDelay
+    #_dl = GeneratorDelayline()
+    _dl = NewportDelay('COM5', beam_passes=4, pos_sign=-1)
 
 elif pc_name == "DESKTOP-BBLLUO7":
     logger.info("Importing and initializing PhaseTecCam")

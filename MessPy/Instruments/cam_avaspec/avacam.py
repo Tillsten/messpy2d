@@ -53,16 +53,11 @@ class AvaCam(ICam):
             self.background = np.array(self.background)
 
     def make_reading(self) -> Reading:
-        spec = self.get_spectra(frames=2)[0]["Probe"]
-        assert spec.signal is not None
-        return Reading(
-            lines=spec.mean[None, :],
-            stds=np.clip(spec.std[None, :], 0, 100),
-            signals=spec.signal[None, :],
-            valid=True,
-            full_data=spec.data,
-            shots=self.shots,
-        )
+        spec = self.get_spectra(frames=2)[0]['Probe']
+        return Reading(lines=spec.mean[None, :],
+                       stds=np.clip(spec.std[None, :], 0, 100),
+                       signals=spec.signal[None, :],
+                       valid=True)
 
     def get_spectra(
         self, frames: Optional[int] = None
@@ -79,13 +74,13 @@ class AvaCam(ICam):
         if self.background is not None:
             self._spec.data -= self.background[:, None]
         self.lock.release()
-        ff = int(self._spec.analog_in[0] < 100)
 
-        spec = Spectrum.create(
-            self._spec.data, name="Probe", frames=frames, first_frame=ff
-        )
+        ff = int(self._spec.analog_in[0] < 50)
+        print(ff)
+        spec = Spectrum.create(self._spec.data, name='Probe',
+                               frames=frames, first_frame=ff)
         # if ff == 0:
-        # spec.signal *= -1
+        #spec.signal *= -1
         return {"Probe": spec}, self._spec.chopper
 
     def set_shots(self, shots):
@@ -108,7 +103,7 @@ class AvaCam(ICam):
             back = self.background.tolist()
         else:
             back = None
-        return {"background": back, "shots": self.shots}
+        return {'background': back, 'shots': self.shots}
 
     def read_cam(self):
         self.get_spectra(2)
