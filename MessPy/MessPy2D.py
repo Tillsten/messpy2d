@@ -43,6 +43,7 @@ setConfigOptions(
     useOpenGL=False,
 )
 
+
 class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
         super(MainWindow, self).__init__()
@@ -75,7 +76,9 @@ class MainWindow(QMainWindow):
             self.xaxis[c] = c.wavelengths.copy()
 
             obs = [lambda i=i, c=c: c.last_read.lines[i, :] for i in range(c.cam.lines)]
-            op = ObserverPlotWithControls(c.cam.line_names, obs, lf, x=c.disp_axis, plot_name="Readings")
+            op = ObserverPlotWithControls(
+                c.cam.line_names, obs, lf, x=c.disp_axis, plot_name="Readings"
+            )
             dw = QDockWidget("Readings")
             dw.setWidget(op)
             dock_wigdets.append(dw)
@@ -83,7 +86,9 @@ class MainWindow(QMainWindow):
             obs = [
                 lambda i=i, c=c: c.last_read.stds[i, :] for i in range(c.cam.std_lines)
             ]
-            op2 = ObserverPlotWithControls(c.cam.std_names, obs, lf, x=c.disp_axis, plot_name="Readings - stddev")
+            op2 = ObserverPlotWithControls(
+                c.cam.std_names, obs, lf, x=c.disp_axis, plot_name="Readings - stddev"
+            )
             op2.obs_plot.setYRange(0, 8)
             dw = QDockWidget("Readings - stddev")
             dw.setWidget(op2)
@@ -93,7 +98,9 @@ class MainWindow(QMainWindow):
                 lambda i=i, c=c: c.last_read.signals[i, :]
                 for i in range(c.cam.sig_lines)
             ]
-            op3 = ObserverPlotWithControls(c.cam.sig_names, obs, lf, x=c.disp_axis, plot_name="Signals")
+            op3 = ObserverPlotWithControls(
+                c.cam.sig_names, obs, lf, x=c.disp_axis, plot_name="Signals"
+            )
             dw = QDockWidget("Pump-probe signal")
             dw.setWidget(op3)
             dock_wigdets.append(dw)
@@ -316,7 +323,11 @@ class CommandMenu(QWidget):
     def add_shaper(self, sh):
         from .ShaperRotStages import ShaperControl
 
-        self.shaper_controls = ShaperControl(sh.rot1, sh.rot2, sh)
+        self.shaper_controls = ShaperControl(
+            sh.rot1, sh.rot2, sh, 
+            folding_mirror_1=getattr(sh, "fm1", None), 
+            folding_mirror_2=getattr(sh, "fm2", None)
+        )
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)
         self._layout.addWidget(but)

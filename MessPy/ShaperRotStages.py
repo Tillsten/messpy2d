@@ -22,34 +22,33 @@ class ShaperControl(QtWidgets.QWidget):
     rs1: RotationStage = attr.ib()
     rs2: RotationStage = attr.ib()
     aom: AOM = attr.ib()
+    folding_mirror_1 : RotationStage|None = attr.ib()
+    folding_mirror_2 : RotationStage|None = attr.ib()
 
     def __attrs_post_init__(self):
         super(ShaperControl, self).__init__()
         self.setWindowTitle("Shaper Controls")
         preset = [-1, -0.1, -0.01] + [0.01, 0.1, 1][::-1]
-        f = self.rs1.move_relative
-        c1 = ControlFactory(
-            "Grating1",
-            apply_fn=self.rs1.set_degrees,
-            update_signal=self.rs1.signals.sigDegreesChanged,
-            format_str="%.2f",
-            presets=preset,
-            preset_func=f,
-            preset_rows=3,
-        )
-
-        f = self.rs2.move_relative
-        c2 = ControlFactory(
-            "Grating2",
-            apply_fn=self.rs2.set_degrees,
-            update_signal=self.rs2.signals.sigDegreesChanged,
-            format_str="%.2f",
-            presets=preset,
-            preset_func=f,
-            preset_rows=3,
-        )
-        c1.update_value(self.rs1.get_degrees())
-        c2.update_value(self.rs2.get_degrees())
+        rot_stages: list[RotationStage] = [self.rs1, self.rs2]
+        names = ["Grating 1", "Grating 2"]
+        if self.folding_mirror_1:
+            assert self.folding_mirror_2 is not None
+            rot_stages += [self.folding_mirror_1, self.folding_mirror_2]
+            names += ["FM 1", "FM2 2"]
+        rot_controls = []
+        for name, rs in zip(names, rot_stages):
+            f = rs.move_relative    
+            c1 = ControlFactory(
+                name,
+                apply_fn=rs.set_degrees,
+                update_signal=rs.signals.sigDegreesChanged,
+                format_str="%.2f",
+                presets=preset,
+                preset_func=f,
+                preset_rows=3,
+            )
+            c1.update_value(rs.get_degrees())
+            rot_controls.append(c1)
         slider_lbl = QtWidgets.QLabel("bla")
 
         self.slider = QtWidgets.QSlider()
@@ -121,8 +120,7 @@ class ShaperControl(QtWidgets.QWidget):
 
         self.setLayout(
             vlay(
-                c1,
-                c2,
+                *rot_controls,                
                 hlay(slider_lbl, self.slider),
                 calib_label,
                 self.chopped,
