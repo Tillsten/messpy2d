@@ -133,6 +133,12 @@ class Plan(QObject):
     def meta_file(self) -> Path:
         return self.get_file_name()[1]
 
+    def make_step_generator(self) -> Generator:
+        """Generator that yields steps of the plan.
+
+        Should be overridden by subclasses."""
+        raise NotImplementedError
+
     def save_meta(self):
         """Saves the metadata in the metafile"""
         self.get_app_state()
