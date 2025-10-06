@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import ClassVar, Tuple, Optional, Callable, Generator, Any
 
+from loguru import logger
 import h5py
 import attr
 from PySide6.QtCore import QObject, Signal, Slot, QThread
@@ -114,7 +115,7 @@ class Plan(QObject):
         """Builds the filename and the metafilename"""
         if self.file_name is not None:
             return self.file_name
-        if ':;<>"|?*\\/' in self.name:
+        if any(c in self.name for c in r':;<>"|?*\/'):
             raise ValueError("Plan name contains invalid characters")
         date_str = self.creation_dt.strftime("%y-%m-%d %H_%M")
         name = f"{date_str} {self.plan_shorthand} {self.name}"
@@ -123,6 +124,7 @@ class Plan(QObject):
             raise IOError("Data path in config not existing")
         if (p / name).with_suffix(".json").exists():
             name = name + "_0"
+        logger.info(f"Generated the filepath {str(p / name)}")
         return (p / name).with_suffix(".h5"), (p / name).with_suffix(".json")
 
     @property
