@@ -128,12 +128,8 @@ class AOM(IDevice):
         self.do_dispersion_compensation = True
         self.compensation_phase = -phase[:, None]
         logger.info(
-            "Updating dispersion compensation %1.f %.2f %.2e %.2e %.2e",
-            self.nu0_THz,
-            self.delay,
-            self.gvd,
-            self.tod,
-            self.fod,
+            "Updating dispersion compensation %1.f %.2f %.2e %.2e %.2e"
+            % (self.nu0_THz, self.delay, self.gvd, self.tod, self.fod)
         )
         self.sigDispersionChanged.emit((self.gvd, self.tod, self.fod))
         self.generate_waveform()
@@ -161,7 +157,7 @@ class AOM(IDevice):
             / self.dac_freq_MHz
         )
         phase_term = phase + phase_term[:, None]
-        return amp * np.cos(phase_term)
+        return amp * np.cos(-phase_term)
 
     def classic_wf(self, amp, phase):
         """Calculates a uncorrected AOM waveform for given amplitude and shape"""
