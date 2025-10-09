@@ -114,6 +114,27 @@ class AOM(IDevice):
         dac.SetDacSampleSizeXD48(1)
         self.lock.unlock()
 
+
+    def generate_dispersion_compensation_phase(self, coefs):
+        """
+        Generates the dispersion compensation phase from the coefficients.
+
+        Parameters
+        ----------
+        coefs : list
+            List of coefficients for the dispersion compensation polynomial.
+            E.g. [delay, gvd, tod, fod]
+        """
+        if self.nu is None:
+            raise ValueError("No calibration available")
+        x = self.nu - self.nu0_THz
+        x *= (2 * np.pi) / 1000
+        # PHz -> disp params in fs^-n (n=2,3,4)
+        coef = np.asarray(coefs) 
+        coef = coef / np.array([1, 2, 6, 24])
+        phase = x * coef[0] + x**2 * coef[1] + x**3 * coef[2] + x**4 * coef[3]
+        return phase[:, None]
+
     def update_dispersion_compensation(self):
         """
         Updates the dispersion correction phase from the class attributes.
@@ -123,8 +144,7 @@ class AOM(IDevice):
         x = self.nu - self.nu0_THz
         x *= (2 * np.pi) / 1000  # PHz -> disp params in fs^-n (n=2,3,4)
         coef = np.array([self.delay, self.gvd, self.tod, self.fod])
-        coef = coef / np.array([1, 2, 6, 24])
-        phase = x * coef[0] + x**2 * coef[1] + x**3 * coef[2] + x**4 * coef[3]
+        phase = self.generate_dispersion_compensation_phase(coef)
         self.do_dispersion_compensation = True
         self.compensation_phase = -phase[:, None]
         logger.info(

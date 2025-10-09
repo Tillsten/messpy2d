@@ -2,6 +2,8 @@ from .PumpProbe import PumpProbePlan
 from .PumpProbeViewer import PumpProbeViewer, PumpProbeStarter
 from .ScanSpectrum import ScanSpectrum
 from .ScanSpectrumView import ScanSpectrumView, ScanSpectrumStarter
+from .ScanFoldingMirrors import ScanFoldingMirrors
+from .ScanFoldingMirrorsView import ScanFoldingMirrorView, ScanFoldingMirrorsStarter
 from .AlignmentHelper import AlignmentHelper
 from .FocusScan import FocusScan
 from .FocusScanView import FocusScanView, FocusScanStarter
