@@ -285,11 +285,19 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         start_button.clicked.connect(self.accept)
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self.reject)
+        self.plan_valid_lbl = QLabel()
+        self.plan_valid_lbl.setText("Plan valid")
 
         self.setLayout(
             hlay(
                 [
-                    vlay([self.treeview, hlay([start_button, cancel_button])]),
+                    vlay(
+                        [
+                            self.treeview,
+                            self.plan_valid_lbl,
+                            hlay([start_button, cancel_button]),
+                        ]
+                    ),
                     vlay([QLabel("Recent Settings"), self.recent_settings_list]),
                 ]
             )
@@ -298,6 +306,7 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         self.setup_paras()
         self.setup_recent_list()
         self.treeview.setParameters(self.paras)
+        self.paras.sigTreeStateChanged.connect(self.check_if_valid)
         self.treeview.setPalette(self.style().standardPalette())
         self.treeview.setStyle(QStyleFactory.create("Fusion"))
         self.treeview.setStyleSheet("")
@@ -348,6 +357,15 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         settings = self.recent_settings[new][1].copy()
         settings.pop("date")
         self.paras.restoreState(settings, removeChildren=False, addChildren=False)
+
+    def check_if_valid(self):
+        try:
+            self.create_plan(self.controller)
+            self.plan_valid_lbl.setText("Plan valid")
+            return True
+        except ValueError as e:
+            self.plan_valid_lbl.setText("Plan invalid: " + str(e))
+            return False
 
     @classmethod
     def start_plan(cls, controller, parent=None):
@@ -467,7 +485,9 @@ class ObserverPlot(pg.PlotWidget):
 
 
 class ObserverPlotWithControls(QWidget):
-    def __init__(self, names, obs, signal, plot_name: str, x=None, parent=None, **kwargs):
+    def __init__(
+        self, names, obs, signal, plot_name: str, x=None, parent=None, **kwargs
+    ):
         super(ObserverPlotWithControls, self).__init__()
         self.obs_plot = ObserverPlot(obs, signal, x, parent)
         line_controls = QWidget()
@@ -485,7 +505,9 @@ class ObserverPlotWithControls(QWidget):
             cb.setChecked(checked)
             form_layout.addRow(lb, cb)
             cb.toggled.connect(line.setVisible)
-            cb.toggled.connect(lambda _, n=n: QSettings().setValue(f"{plot_name}/{n}", _))
+            cb.toggled.connect(
+                lambda _, n=n: QSettings().setValue(f"{plot_name}/{n}", _)
+            )
 
         self.line_controls = line_controls
         self.setLayout(QHBoxLayout())
@@ -611,6 +633,7 @@ def float_param(
         limits=(min_val, max_val),
         **kwargs,
     )
+
 
 def int_params(
     name: str,
