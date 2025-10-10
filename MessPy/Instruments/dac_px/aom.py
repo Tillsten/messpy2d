@@ -133,7 +133,7 @@ class AOM(IDevice):
         coef = np.asarray(coefs) 
         coef = coef / np.array([1, 2, 6, 24])
         phase = x * coef[0] + x**2 * coef[1] + x**3 * coef[2] + x**4 * coef[3]
-        return phase[:, None]
+        return phase
 
     def update_dispersion_compensation(self):
         """
