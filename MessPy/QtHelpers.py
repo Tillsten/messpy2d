@@ -281,8 +281,8 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         self.recent_settings_list = QListWidget()
         self.recent_settings_list.currentRowChanged.connect(self.load_recent)
 
-        start_button = QPushButton("Start Plan")
-        start_button.clicked.connect(self.accept)
+        self.start_button = QPushButton("Start Plan")
+        self.start_button.clicked.connect(self.accept)
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self.reject)
         self.plan_valid_lbl = QLabel()
@@ -295,7 +295,7 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
                         [
                             self.treeview,
                             self.plan_valid_lbl,
-                            hlay([start_button, cancel_button]),
+                            hlay([self.start_button, cancel_button]),
                         ]
                     ),
                     vlay([QLabel("Recent Settings"), self.recent_settings_list]),
@@ -357,14 +357,17 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         settings = self.recent_settings[new][1].copy()
         settings.pop("date")
         self.paras.restoreState(settings, removeChildren=False, addChildren=False)
+        self.check_if_valid()
 
     def check_if_valid(self):
         try:
             self.create_plan(self.controller)
-            self.plan_valid_lbl.setText("Plan valid")
+            self.plan_valid_lbl.setText("<h2>Plan valid</h2>")
+            self.start_button.setEnabled(True)
             return True
-        except ValueError as e:
-            self.plan_valid_lbl.setText("Plan invalid: " + str(e))
+        except Exception as e:
+            self.plan_valid_lbl.setText("<h2 color=r>Plan invalid: " + str(e) + "</h2>")
+            self.start_button.setEnabled(False)
             return False
 
     @classmethod

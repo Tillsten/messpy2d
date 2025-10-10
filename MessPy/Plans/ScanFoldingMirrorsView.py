@@ -82,6 +82,7 @@ class ScanFoldingMirrorsStarter(PlanStartDialog):
                 "step": 50,
                 "value": 10,
             },
+            {"name": "Filename", "type": "str", "value": "Default name"},
             {"name": "Estimated angle", "type": "float", "value": 1.0},
             {"name": "Angle range", "type": "float", "value": 0.2},
             {"name": "Steps", "type": "int", "value": 10, "min": 1},
@@ -99,8 +100,9 @@ class ScanFoldingMirrorsStarter(PlanStartDialog):
 
     def create_plan(self, controller: Controller):
         p = self.paras.child("Exp. Settings")
+        assert controller.shaper is not None
         scan = ScanFoldingMirrors(
-            aom=controller.aom,
+            aom=controller.shaper,
             cam=controller.cam.cam,
             estimated_best_angle=p["Estimated angle"],
             angle_range=p["Angle range"],

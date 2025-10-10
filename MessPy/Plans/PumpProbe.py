@@ -67,7 +67,7 @@ class PumpProbePlan(Plan):
                     save_full_data=self.save_full_data,
                 )
             )
-            c.set_shots(self.shots)
+
         
 
     def move_rot_stage(self, angle):
@@ -131,6 +131,11 @@ class PumpProbePlan(Plan):
     def make_step_gen(self):
         c = self.controller
         rs = self.controller.rot_stage
+        for cd in self.cam_data:
+            cd.cam.set_shots(self.shots)
+            if cd.cam.changeable_wavelength:
+                cd.cam.set_wavelength(self.cwl[0])
+
         while True:
             yield from self.pre_scan()
             yield from self.scan()
@@ -215,9 +220,7 @@ class PumpProbeData(QObject):
             self.wavelengths[i, :] = self.cam.get_wavelengths(wl)
         self.current_scan = np.zeros((num_wl, num_t, num_sig, num_ch))
         self.mean_scans = None
-        if self.cam.changeable_wavelength:
-            self.cam.set_wavelength(self.cwl[0])
-
+       
     def post_scan(self):
         "Called when a scan through the delay-line has finished"
         self.delay_scans += 1

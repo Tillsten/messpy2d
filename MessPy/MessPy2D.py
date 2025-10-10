@@ -150,6 +150,10 @@ class MainWindow(QMainWindow):
             plans += [("GVD Scan", "fa5s.stopwatch", GVDScanStarter)]
             plans += [("2D Measurement", "ei.graph", AOMTwoDStarter)]
 
+            if self.controller.shaper.fm1 is not None:
+                plans += [("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)]
+       
+
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
             pp = QPushButton(text, icon=asl_icon)

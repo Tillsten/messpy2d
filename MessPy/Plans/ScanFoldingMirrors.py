@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal
 import numpy as np
 from MessPy.Instruments.interfaces import IRotationStage, ICam
 from MessPy.Instruments.dac_px import AOM
-from MessPy.Plans import Plan
+from .PlanBase import Plan
 from attr import Factory, dataclass
 
 from loguru import logger
@@ -27,20 +27,30 @@ class ScanFoldingMirrors(Plan):
     shots: int = 20
     name: str = "Scan Folding Mirrors"
     data: dict[tuple[float, float], float] = Factory(dict)
+    state: dict = Factory(dict)
     plan_shorthand: ClassVar[str] = "Scan FoldingMirrors"
 
     sigPointRead: ClassVar[Signal] = Signal()
     sigAngle1Changed: ClassVar[Signal] = Signal(float)
 
     def __attrs_post_init__(self):
-        assert hasattr(self.aom, "_fm1"), "AOM has no folding mirrors"
-        assert hasattr(self.aom, "_fm2"), "AOM has no folding mirrors"
+        assert hasattr(self.aom, "fm1"), "AOM has no folding mirrors"
+        assert hasattr(self.aom, "fm2"), "AOM has no folding mirrors"
+        self.state['FM1'] = self.aom.fm1.get_degrees()
+        self.state['FM2'] = self.aom.fm2.get_degrees()
+        gen = self.make_step_generator()
+        self.make_step = lambda: next(gen)
         return super().__attrs_post_init__()
-
-    def make_step_generator(self) -> Generator[Any, None, None]:
-        fm1: IRotationStage = self.aom._fm1  # type: ignore[attr-defined]
+    
+    def restore_state(self):
+        self.aom.fm1.set_degrees(self.state['FM1'])
+        self.aom.fm2.set_degrees(self.state['FM2'])
+        return super().restore_state()
+    
+    def make_step_generator(self):
+        fm1: IRotationStage = self.aom.fm1  # type: ignore[attr-defined]
         zero_order_angle1 = fm1.get_degrees()
-        fm2: IRotationStage = self.aom._fm2  # type: ignore[attr-defined]
+        fm2: IRotationStage = self.aom.fm2  # type: ignore[attr-defined]
         zero_order_angle2 = fm2.get_degrees()
 
         logger.info(
@@ -68,6 +78,7 @@ class ScanFoldingMirrors(Plan):
                     fm1.set_degrees(zero_order_angle1 + ang1),
                     fm2.set_degrees(zero_order_angle2 + ang2),
                 )
+                logger.info(f"Moving to {zero_order_angle1 + ang1} and {zero_order_angle2 + ang2}")
                 while fm1.is_moving() or fm2.is_moving():
                     yield
                 sig = self.measure_point()

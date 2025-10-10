@@ -89,7 +89,9 @@ class Cam(QObject):
         """Sets the number of shots recorded"""
         logger.info(f"Setting shots to {shots}")
         try:
-            self.shots = int(shots)
+            shots = int(shots)
+            assert shots > 1
+            self.shots = shots            
             self.cam.set_shots(self.shots)
             config.shots = shots
             self.sigShotsChanged.emit(self.shots)
