@@ -503,6 +503,7 @@ class ObserverPlotWithControls(QWidget):
             cb = QCheckBox()
             checked = settings.value(f"{plot_name}/{n}", True, type=bool)
             cb.setChecked(checked)
+            line.setVisible(checked)
             form_layout.addRow(lb, cb)
             cb.toggled.connect(line.setVisible)
             cb.toggled.connect(
