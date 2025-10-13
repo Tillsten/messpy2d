@@ -48,6 +48,7 @@ elif pc_name == "DESKTOP-BBLLUO7":
         try:
             from MessPy.Instruments.cam_phasetec import PhaseTecCam
 
+            global _cam
             _cam = PhaseTecCam()
             tmp_shots = _cam.shots
             _cam.set_shots(10)
@@ -59,59 +60,17 @@ elif pc_name == "DESKTOP-BBLLUO7":
             raise e
         # _cam = CamMock()
 
-    _cam2 = None
     # from MessPy.Instruments.delay_line_apt import DelayLine
     # _dl = DelayLine(name="VisDelay")
     # from MessPy.Instruments.delay_dg535 import GeneratorDelayline
 
     # _dl = GeneratorDelayline(port='COM10')
-    logger.info("Importing and initializing NewportDelay")
-    from MessPy.Instruments.delay_line_newport import NewportDelay
 
-    _dl = NewportDelay(name="IR Delay", pos_sign=-1)
-
-    logger.info("Importing and initializing AOM")
-    from MessPy.Instruments.dac_px import AOM, AOMShutter
-
-    try:
-        _shaper = AOM(name="AOM")
-        aom_shutter = AOMShutter(aom=_shaper)
-        _shutter.append(aom_shutter)
-        logger.info("Importing and initializing RotationStage")
-        from MessPy.Instruments.RotationStage import RotationStage
-
-        r1 = RotationStage(name="Grating1", comport="COM5")
-        r2 = RotationStage(name="Grating2", comport="COM6")
-        _shaper.rot1 = r1
-        _shaper.rot2 = r2
-        f1 = RotationStage(name="Folding2", comport="COM9", offset=0)
-        f2 = RotationStage(name="Folding1", comport="COM4", offset=0)
-        _shaper.fm1 = f1
-        _shaper.fm2 = f2
-    except Exception:
-        logger.warning("Either AOM or Rotation Stage initalization failed")
-        _shaper = None
-        raise Exception
-
-    logger.info("Importing and initializing TopasShutter")
-    try:
-        from MessPy.Instruments.shutter_topas import TopasShutter
-
-        _shutter.append(TopasShutter())
-    except ImportError:
-        logger.warning("TopasShutter import failed")
-
-    logger.info("Importing and initializing PhidgetShutter")
-    try:
-        from MessPy.Instruments.shutter_phidget import PhidgetShutter
-
-        _shutter.append(PhidgetShutter())
-    except ImportError:
-        logger.warning("PhidgetShutter import failed")
     def init_dl():
         logger.info("Importing and initializing NewportDelay")
         from MessPy.Instruments.delay_line_newport import NewportDelay
 
+        global _dl
         _dl = NewportDelay(name="IR Delay", pos_sign=-1)
 
     def init_aom():
@@ -119,6 +78,7 @@ elif pc_name == "DESKTOP-BBLLUO7":
         from MessPy.Instruments.dac_px import AOM, AOMShutter
 
         try:
+            global _shaper
             _shaper = AOM(name="AOM")
             aom_shutter = AOMShutter(aom=_shaper)
             _shutter.append(aom_shutter)
@@ -129,8 +89,8 @@ elif pc_name == "DESKTOP-BBLLUO7":
             r2 = RotationStage(name="Grating2", comport="COM6")
             _shaper.rot1 = r1
             _shaper.rot2 = r2
-            f1 = RotationStage(name="Folding2", comport="COM9")
-            f2 = RotationStage(name="Folding1", comport="COM4")
+            f1 = RotationStage(name="Folding2", comport="COM9", offset=0)
+            f2 = RotationStage(name="Folding1", comport="COM4", offset=0)
             _shaper.fm1 = f1
             _shaper.fm2 = f2
         except Exception as e:
@@ -149,12 +109,24 @@ elif pc_name == "DESKTOP-BBLLUO7":
             logger.warning("TopasShutter import failed")
             raise e
 
-    import threading
+    # Use concurrent.futures to initialize hardware in parallel and
+    # propagate exceptions from worker functions.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    for f in [init_pt, init_dl, init_aom, init_topas_shutter]:
-        t = threading.Thread(target=f)
-        t.start()
-    t.join()
+    init_funcs = [init_pt, init_dl, init_aom, init_topas_shutter]
+    with ThreadPoolExecutor(max_workers=len(init_funcs)) as ex:
+        futures = {ex.submit(f): f.__name__ for f in init_funcs}
+        for fut in as_completed(futures):
+            name = futures[fut]
+            try:
+                fut.result()
+                logger.info(f"Initialization function {name} finished successfully")
+            except Exception as e:
+                logger.exception(
+                    f"Initialization function {name} raised an exception: {e}"
+                )
+                # re-raise so import errors aren't silently swallowed
+                raise
     # logger.info("Importing and initializing PhidgetShutter")
     # try:
     #    from MessPy.Instruments.shutter_phidget import PhidgetShutter
