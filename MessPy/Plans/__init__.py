@@ -17,6 +17,8 @@ from .ShaperCalibPlan import CalibPlan
 from .ShaperCalibView import CalibScanView
 from .SignalImagePlan import SignalImagePlan
 from .SignalImageView import SignalImageView, SignalImageStarter
+from .FastGVDScan import FastGVDScan
+from .FastGVDPScanView import FastGVDScanStarter, FastGVDScanView
 from .PlanBase import Plan, ScanPlan
 # from .GermaniumPlan import GermaniumPlan
 # from .GermaniumView import GermaniumView, GermaniumStarter
