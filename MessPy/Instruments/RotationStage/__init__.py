@@ -78,28 +78,36 @@ class RotationStage(IRotationStage):
             self.w("1MM1")
             
         elif state.startswith("NOT REFERENCED"):
-            self.w(b"1RS")
-            self.w(b"1OR")
+            #self.w(b"1RS")
+            self.w("1OR")
+            time.sleep(0.3)
             logger.info("Start Homing")
-            while self.controller_state().startswith("HOMING"):
+            
+            while True:
+                state = self.controller_state()
+                print(state)                
                 time.sleep(0.3)
+                if state.startswith('READY'):
+                    break
             logger.info("Homing finnished")
         logger.info(f"State after init: {self.controller_state()}, Postion: {self.get_degrees()}")
         #if self.last_pos != 0:
         #    self.set_degrees(self.last_pos)
 
     def w(self, x):
-        with self.lock:
-            writer_str = f"{x}\r\n"
-            self.rot.write(writer_str.encode("utf-8"))
-            self.rot.timeout = 1
+        assert x is not bytes
+
+        writer_str = f"{x}\r\n"
+        self.rot.write(writer_str.encode("utf-8"))
+        #self.rot.timeout = 1
 
     def set_degrees(self, pos):
         """Set absolute position of the roatation stage"""
         cur_pos = self.get_degrees()
         if isinstance(pos, str):
             pos = float(pos)
-        self.w(f"1PA{pos+self.offset}")
+        with self.lock:
+            self.w(f"1PA{pos+self.offset}")
         logger.info(f"Starting Move to {pos}")
         self.last_pos = pos
 
@@ -121,17 +129,20 @@ class RotationStage(IRotationStage):
         return dict(last_pos=self.last_pos)
 
     def controller_state(self) -> str:
-        self.w("1MM?")
-        ans = self.rot.read_until(b"\r\n").decode()
+        with self.lock:
+            self.w("1MM?")        
+            ans = self.rot.read_until(b"\r\n").decode()
+        logger.debug("Asked for stateL Got ans %s"%ans)
         state = ans[ans.find("MM") + 2 : -2].upper()
         state = state.replace(" ", "0")
         return controller_states[state]
 
     def get_degrees(self):
         """Returns the position"""
-        self.w("1TP")
-        self.rot.timeout = 0.5
-        ans = self.rot.read_until(b"\r\n")
+        with self.lock:
+            self.w("1TP")        
+            ans = self.rot.read_until(b"\r\n")
+        logger.debug("Asked for pos. Got ans %s"%ans)
         ans = ans.decode()
         return float(ans[ans.find("TP") + 2 : -2]) - self.offset
 
