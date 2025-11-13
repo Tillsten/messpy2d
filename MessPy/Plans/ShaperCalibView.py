@@ -1,7 +1,4 @@
-import asyncio
-import matplotlib.pyplot as plt
-
-from pyqtgraph.widgets.PlotWidget import PlotWidget
+from pyqtgraph import PlotWidget
 from qasync import asyncSlot
 from PySide6.QtWidgets import (
     QWidget,
@@ -13,21 +10,15 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialogButtonBox,
     QSizePolicy,
-    QSlider,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, Signal
-from matplotlib.figure import Figure
-from matplotlib import rcParams, style
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar,
-)
+from PySide6.QtCore import Signal
+from pyqtgraph import TextItem, ScatterPlotItem
 import attr
 import numpy as np
 from scipy.constants import c
 from scipy.signal import find_peaks
-from scipy.ndimage import uniform_filter1d, gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 from typing import Optional, ClassVar
 from qtawesome import icon
 from pyqtgraph.parametertree import Parameter, ParameterTree
@@ -36,9 +27,6 @@ import MessPy.Instruments.interfaces as I
 from MessPy.Plans.ShaperCalibPlan import CalibPlan
 from MessPy.Config import config
 from MessPy.Instruments.dac_px import AOM
-
-rcParams["font.family"] = "Segoe UI"
-style.use("dark_background")
 
 
 @attr.s(auto_attribs=True)
@@ -92,7 +80,7 @@ class CalibScanView(QWidget):
         config.save()
 
         self.params.setReadonly(True)
-        #self.params.child("Start Calibration").setEnabled(False)
+        # self.params.child("Start Calibration").setEnabled(False)
         self.plan = CalibPlan(
             cam=self.cam,
             dac=self.dac,
@@ -174,28 +162,36 @@ class CalibView(QWidget):
 
     def __attrs_post_init__(self):
         super().__init__()
-        dpi = self.logicalDpiX()
         self.setWindowTitle("Calibration")
         self.setWindowIcon(icon("fa5s.ruler-horizontal"))
-        self.fig = Figure(dpi=dpi, constrained_layout=True)
-        self.ax0, self.ax2 = self.fig.subplots(2)
-        self.canvas = FigureCanvas(self.fig)
-
         self.setLayout(QVBoxLayout())
 
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.canvas.setContentsMargins(0, 0, 0, 0)
+        # Top and bottom plots using pyqtgraph
+        self.plot_top = PlotWidget()
+        self.plot_bottom = PlotWidget()
+        # dark background
+        try:
+            self.plot_top.setBackground("k")
+            self.plot_bottom.setBackground("k")
+        except Exception:
+            pass
 
+        # set labels
+        self.plot_top.setLabel("bottom", "Wavelength", units="nm")
+        self.plot_top.setLabel("left", "Counts")
+        self.plot_bottom.setLabel("bottom", "Pixel")
+        self.plot_bottom.setLabel("left", "Freq / THz")
+
+        # controls row
         self.row = QHBoxLayout()
         self.sb_filter = QSpinBox()
-        self.sb_filter.setValue(self.filter)
+        self.sb_filter.setValue(int(self.filter))
         self.sb_filter.valueChanged.connect(self.analyze)
         self.row.addWidget(QLabel("Filter"))
         self.row.addWidget(self.sb_filter)
 
         self.sb_dist = QSpinBox()
-        self.sb_dist.setValue(self.distance)
+        self.sb_dist.setValue(int(self.distance))
         self.sb_dist.valueChanged.connect(self.analyze)
         self.sb_dist.setMinimum(1)
 
@@ -204,7 +200,7 @@ class CalibView(QWidget):
 
         self.sb_prom = QSpinBox()
         self.sb_prom.setMaximum(20000)
-        self.sb_prom.setValue(self.prominence)
+        self.sb_prom.setValue(int(self.prominence))
         self.sb_prom.valueChanged.connect(self.analyze)
         self.row.addWidget(QLabel("Peak prominance"))
         self.row.addWidget(self.sb_prom)
@@ -225,43 +221,66 @@ class CalibView(QWidget):
         bb.rejected.connect(self.sigCalibrationCanceled.emit)
         bb.rejected.connect(self.close)
 
-        self.layout().addWidget(self.toolbar)
-        self.layout().addWidget(self.canvas)
+        self.layout().addWidget(self.plot_top)
+        self.layout().addWidget(self.plot_bottom)
         self.layout().addLayout(self.row)
 
         self.layout().setSpacing(0)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.analyze()
-        self.fig.canvas.draw()
 
     def analyze(self):
+        # Read control values
         self.prominence = self.sb_prom.value()
         self.distance = self.sb_dist.value()
         self.filter = self.sb_filter.value()
+
+        # Filter / normalize
         if self.filter > 0:
             y_train = gaussian_filter1d(self.y_train, self.filter)
             y_single = gaussian_filter1d(self.y_single, self.filter)
-            y_full = gaussian_filter1d(self.y_full, self.filter)
+            y_full = (
+                gaussian_filter1d(self.y_full, self.filter)
+                if self.y_full is not None
+                else None
+            )
         else:
             y_train, y_single, y_full = self.y_train, self.y_single, self.y_full
-        if self.use_norm.isChecked():
+        if self.use_norm.isChecked() and (y_full is not None):
             y_train = 500 * (y_train / (y_full + 50))
             y_single = 500 * (y_single / (y_full + 50))
 
         p0, _ = find_peaks(y_train, prominence=self.prominence, distance=self.distance)
         p1, _ = find_peaks(y_single, prominence=self.prominence, distance=self.distance)
 
-        self.ax0.cla()
-        self.ax2.cla()
-        self.ax0.plot(self.x, y_train)
-        self.ax0.plot(self.x, y_single)
-        if self.y_full is not None and not self.use_norm.isChecked():
-            self.ax0.plot(self.x, y_full)
-        ax1 = self.ax2
-        x = self.x
-        self.ax0.plot(self.x[p0], y_train[p0], "|", ms=7, c="r")
-        self.ax0.plot(self.x[p1], y_single[p1], "^", ms=7, c="r")
+        # Clear plots
+        self.plot_top.clear()
+        self.plot_bottom.clear()
 
+        # Top plot: lines
+        x = self.x
+        self.plot_top.plot(x, y_train, pen="w", name="train")
+        self.plot_top.plot(x, y_single, pen="y", name="single")
+        if self.y_full is not None and not self.use_norm.isChecked():
+            self.plot_top.plot(x, self.y_full, pen="g", name="full")
+
+        # Mark peaks using scatter
+        if p0.size:
+            spots0 = [
+                {"pos": (float(xi), float(yi))} for xi, yi in zip(x[p0], y_train[p0])
+            ]
+            s0 = ScatterPlotItem(size=7, brush="r")
+            s0.addPoints(spots0)
+            self.plot_top.addItem(s0)
+        if p1.size:
+            spots1 = [
+                {"pos": (float(xi), float(yi))} for xi, yi in zip(x[p1], y_single[p1])
+            ]
+            s1 = ScatterPlotItem(size=7, brush="r", symbol="t")
+            s1.addPoints(spots1)
+            self.plot_top.addItem(s1)
+
+        # Bottom plot: alignment / frequency
         if len(p0) > 1 and len(p1) == 1:
             a = np.arange(-100, 101) * self.dist
             align = np.argmin(abs(x[p0] - x[p1]))
@@ -271,47 +290,35 @@ class CalibView(QWidget):
             freqs = c / x[p0] / 1e3
             freq0 = c / x[p1] / 1e3
 
-            ax1.plot(pix0, freq0, marker="o", ms=10)
-            ax1.set_xlabel("Pixel")
-            ax1.set_ylabel("Freq / THz")
-            self.ax0.set(xlabel="Wavelength / nm", ylabel="Counts")
+            # plot single point
+            self.plot_bottom.plot([pix0], [freq0], pen=None, symbol="o")
 
-            ax1.plot(pixel, freqs, marker="x", ms=10)
-            all_pix = np.arange(pixel.min(), pixel.max())
+            # plot pixel vs freqs
+            self.plot_bottom.plot(pixel, freqs, pen=None, symbol="x")
+
+            all_pix = np.arange(int(pixel.min()), int(pixel.max()) + 1)
             self.coeff = np.polyfit(pixel, freqs, 2)
             fit = np.polyval(self.coeff, all_pix)
-            txt = "".join(["%.3e\n" % i for i in self.coeff])
-            ax1.annotate(
-                txt, (0.95, 0.93), xycoords="axes fraction", va="top", ha="right"
-            )
-            ax1.plot(all_pix, fit, color="xkcd:lime")
 
-            self.fig.canvas.draw_idle()
+            # show fit line
+            self.plot_bottom.plot(all_pix, fit, pen={"color": "lime"})
+
+            # annotate coefficients
+            txt = "\n".join(["%.3e" % i for i in self.coeff])
+            ti = TextItem(txt, color="w")
+            ti.setPos(float(all_pix.max()), float(fit.max()))
+            self.plot_bottom.addItem(ti)
 
 
 if __name__ == "__main__":
-    from MessPy.Instrumentsruments.dac_px import AOM
+    from MessPy.Instruments.dac_px import AOM
 
     aom = AOM()
     app = QApplication([])
-    # from qt_material import apply_stylesheet
-    # apply_stylesheet(app, 'light_blue.xml')
     x, y_train, y_single, y_full = np.load("calib.npy").T
     y_single -= y_single.min()
     y_train -= y_train.min()
     y_full -= y_full.min()
     view = CalibView(x=x, y_single=y_single, y_train=y_train, y_full=y_full)
     view.show()
-    exit()
-    view.sigCalibrationAccepted.connect(aom.set_calib)
-    view.sigCalibrationAccepted.connect(
-        lambda x: aom.generate_waveform(np.ones_like(aom.nu), np.ones_like(aom.nu))
-    )
-
-    def set_gvd(x):
-        aom.gvd = x
-        aom.update_dispersion_compensation()
-
-    view.gvd_slider.valueChanged.connect(set_gvd)
-
     app.exec_()
