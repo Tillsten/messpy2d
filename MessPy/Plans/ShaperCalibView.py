@@ -25,6 +25,7 @@ from pyqtgraph.parametertree import Parameter, ParameterTree
 
 import MessPy.Instruments.interfaces as I
 from MessPy.Plans.ShaperCalibPlan import CalibPlan
+from MessPy.Plans.ShaperCalibAnalyzer import CalibView
 from MessPy.Config import config
 from MessPy.Instruments.dac_px import AOM
 
@@ -141,7 +142,7 @@ class CalibScanView(QWidget):
 
 
 @attr.s(auto_attribs=True)
-class CalibView(QWidget):
+class CalibView2(QWidget):
     x: np.ndarray
     y_train: np.ndarray
     y_single: np.ndarray

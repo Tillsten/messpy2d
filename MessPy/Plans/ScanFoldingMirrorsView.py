@@ -2,11 +2,17 @@ import numpy as np
 import pyqtgraph.parametertree as pt
 import pyqtgraph.parametertree.parameterTypes as pTypes
 
-from pyqtgraph import PlotWidget
-from PySide6.QtWidgets import QWidget
+from pyqtgraph import PlotWidget, mkPen
+from PySide6.QtWidgets import QWidget, QLabel
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
+from MessPy.QtHelpers import (
+    ObserverPlot,
+    PlanStartDialog,
+    make_entry,
+    vlay,
+    VEGA_COLORS,
+)
 
 
 from .ScanFoldingMirrors import ScanFoldingMirrors
@@ -16,14 +22,18 @@ class ScanFoldingMirrorView(QWidget):
     def __init__(self, scan_plan: ScanFoldingMirrors, *args, **kwargs):
         super(ScanFoldingMirrorView, self).__init__(*args, **kwargs)
         self.plan = scan_plan
-
+        self.info_label = QLabel()
         self.top_plot = PlotWidget()
         self.bot_plot = PlotWidget()
+        self.sig_plot = PlotWidget()
         self.bot_plot.plotItem.setLabel("bottom", "Angle 2 / °")
         self.top_plot.plotItem.setLabel("bottom", "Angle 1 / °")
 
-        self.setLayout(vlay([self.top_plot, self.bot_plot]))
+        self.setLayout(vlay([self.info_label, self.sig_plot, self.top_plot, self.bot_plot]))
         self.plan.sigPointRead.connect(self.plot_data)
+
+    def update_label(self):
+        pass
 
     def plot_data(self):
         data = self.plan.data
@@ -35,18 +45,23 @@ class ScanFoldingMirrorView(QWidget):
         angles2 = np.array(angles2)
         signals = np.array(signals)
 
+        self.sig_plot.clear()
+        self.sig_plot.plot(x=self.plan.cam_wavelengths, y=self.plan.last_spec)
+
         # The top plot shows the signal vs angle2.
         # For each angle1, we plot a line
         self.top_plot.clear()
-        for a1 in np.unique(angles1):
+        for i, a1 in enumerate(np.unique(angles1)):
+            color = list(VEGA_COLORS.values())[i % len(VEGA_COLORS)]
             mask = angles1 == a1
             self.top_plot.plot(
                 angles2[mask],
                 signals[mask],
-                pen=None,
+                pen=mkPen(color=color),
                 symbol="o",
                 symbolSize=5,
                 name=f"Angle1={a1:.2f}°",
+                antialias=True,
             )
         self.top_plot.addLegend()
         self.top_plot.setTitle("Signal vs Angle 2 for different Angle 1")
@@ -61,7 +76,12 @@ class ScanFoldingMirrorView(QWidget):
             max_signals.append((a1, signals[mask].max()))
         max_signals = np.array(max_signals)
         self.bot_plot.plot(
-            max_signals[:, 0], max_signals[:, 1], pen=None, symbol="o", symbolSize=5
+            max_signals[:, 0],
+            max_signals[:, 1],
+            pen=mkPen("y", width=2),
+            symbol="o",
+            symbolSize=5,
+            antialias=True,
         )
         self.bot_plot.setTitle("Max Signal vs Angle 1")
         self.bot_plot.setLabel("left", "Max Signal (a.u.)")

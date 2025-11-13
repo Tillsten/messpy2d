@@ -134,7 +134,7 @@ class PumpProbePlan(Plan):
         for cd in self.cam_data:
             cd.cam.set_shots(self.shots)
             if cd.cam.changeable_wavelength:
-                cd.cam.set_wavelength(self.cwl[0])
+                cd.cam.set_wavelength(cd.cwl[0])
 
         while True:
             yield from self.pre_scan()

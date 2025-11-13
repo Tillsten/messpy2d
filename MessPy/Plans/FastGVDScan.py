@@ -2,10 +2,9 @@ import typing as T
 from pathlib import Path
 
 import attr
-
 import numpy as np
+from loguru import logger
 from PySide6.QtCore import Signal, Slot
-
 
 from MessPy.ControlClasses import Cam
 from MessPy.Instruments.dac_px import AOM
@@ -59,8 +58,10 @@ class FastGVDScan(Plan):
                 "Too many shots, please reduce the number of repeats or GVD Values"
             )
         self.make_step = lambda: next(gen)
+        logger.info("Plan initialized")
 
     def generate_masks(self):
+        logger.info("Generating Masks")
         self.aom: AOM
         masks = []
         gvd = self.gvd * 1000
@@ -87,24 +88,24 @@ class FastGVDScan(Plan):
         self.aom.load_mask(masks)
 
     def make_step_gen(self):
-        while self.status == "running":
-            self.cam.set_shots(self.repeats * len(self.gvd_list))
-            specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
+        self.generate_masks()
+        self.cam.set_shots(self.repeats * len(self.gvd_list))
+        specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
 
-            for s in ["Probe1", "Probe2"]:
-                fd = specs[s].frame_data
-                if fd is None:
-                    raise RuntimeError(f"Frame data for {s} is None")
-                mean = (fd[:, 0::2] + fd[:, 1::2]) / 2.0
-                sig = fd[:, 0::2] - fd[:, 1::2]
-                sig /= mean
-                sig = -1000 * np.log10(sig)
-                if s == "Probe1":
-                    self.probe = mean
-                else:
-                    self.probe2 = mean
-            yield
-
+        for s in ["Probe1", "Probe2"]:
+            fd = specs[s].frame_data
+            if fd is None:
+                raise RuntimeError(f"Frame data for {s} is None")
+            mean = (fd[:, 0::2] + fd[:, 1::2]) / 2.0
+            sig = fd[:, 0::2] - fd[:, 1::2]
+            sig /= mean
+            sig = -1000 * np.log10(sig)
+            if s == "Probe1":
+                self.probe = mean
+            else:
+                self.probe2 = mean
+        yield
+        self.sigPointRead.emit()
         self.save()
         yield
 
@@ -113,7 +114,6 @@ class FastGVDScan(Plan):
         for p in ["gvd", "tod", "fod"]:
             setattr(self.aom, p, self.settings_before[p])
         self.aom.update_dispersion_compensation()
-        self.sigPlanFinished.emit()
 
     def save(self):
         return

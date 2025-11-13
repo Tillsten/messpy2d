@@ -92,7 +92,7 @@ class FastGVDScanStarter(PlanStartDialog):
 
     def setup_paras(self):
         tmp = [
-            {"name": "Filename", "type": "str", "value": "temp_gvd"},
+            {"name": "Filename", "type": "str", "value": "temp_fastgvd"},
             {"name": "Reps", "type": "int", "max": 2000, "value": 20},
             {"name": "Start Val", "type": "float", "value": -300, "step": 1},
             {"name": "End Val", "type": "float", "value": -100, "step": 1},

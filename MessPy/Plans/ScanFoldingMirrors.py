@@ -4,13 +4,14 @@ maximize the AOM efficiency.
 """
 
 from typing import ClassVar, Generator
+import time
 
 from PySide6.QtCore import Signal
 import numpy as np
 from MessPy.Instruments.interfaces import IRotationStage, ICam
 from MessPy.Instruments.dac_px import AOM
 from .PlanBase import Plan
-from attr import Factory, dataclass
+from attr import Factory, dataclass, attrib
 
 from loguru import logger
 
@@ -29,6 +30,8 @@ class ScanFoldingMirrors(Plan):
     data: dict[tuple[float, float], float] = Factory(dict)
     state: dict = Factory(dict)
     plan_shorthand: ClassVar[str] = "Scan FoldingMirrors"
+    last_spec: np.ndarray = attrib(init=False)
+    cam_wavelengths: np.ndarray = attrib(init=False)
 
     sigPointRead: ClassVar[Signal] = Signal()
     sigAngle1Changed: ClassVar[Signal] = Signal(float)
@@ -73,13 +76,14 @@ class ScanFoldingMirrors(Plan):
             + self.estimated_best_angle
         )
         for ang1 in angle1:
+            fm1.set_degrees(zero_order_angle1 + ang1)
+
             for ang2 in angle2:
-                yield (
-                    fm1.set_degrees(zero_order_angle1 + ang1),
-                    fm2.set_degrees(zero_order_angle2 + ang2),
-                )
+                fm2.set_degrees(zero_order_angle2 - ang2)
+                
                 logger.info(f"Moving to {zero_order_angle1 + ang1} and {zero_order_angle2 + ang2}")
                 while fm1.is_moving() or fm2.is_moving():
+                    time.sleep(0.1)
                     yield
                 sig = self.measure_point()
                 self.data[(ang1, ang2)] = sig
@@ -88,8 +92,12 @@ class ScanFoldingMirrors(Plan):
                     f"Angle1: {ang1:.3f}°, Angle2: {ang2:.3f}°, Signal: {sig:.1f}"
                 )
                 yield
+        self.sigPlanFinished.emit()
+
 
     def measure_point(self):
         reading = self.cam.get_spectra(frames=2)[0]
         sum_sig = reading["Probe2"].mean.sum()
+        self.last_spec = (reading["Probe2"].mean)
+        self.cam_wavelengths = self.cam.get_wavelength_array()
         return sum_sig

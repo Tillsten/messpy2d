@@ -112,8 +112,8 @@ elif pc_name == "DESKTOP-BBLLUO7":
     # Use concurrent.futures to initialize hardware in parallel and
     # propagate exceptions from worker functions.
     from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    init_funcs = [init_pt, init_dl, init_aom, init_topas_shutter]
+    init_aom()
+    init_funcs = [init_pt, init_dl,  init_topas_shutter]
     with ThreadPoolExecutor(max_workers=len(init_funcs)) as ex:
         futures = {ex.submit(f): f.__name__ for f in init_funcs}
         for fut in as_completed(futures):

@@ -109,6 +109,7 @@ class Plan(QObject):
 
     def __attrs_post_init__(self):
         super(Plan, self).__init__()
+        self.sigPlanFinished.connect(self.restore_state)
         self.get_file_name()  # check if name is valid
 
     def get_file_name(self) -> Tuple[Path, Path]:

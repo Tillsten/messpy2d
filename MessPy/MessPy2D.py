@@ -147,6 +147,7 @@ class MainWindow(QMainWindow):
             plans.append(("Signal Image", "fa5s.image", SignalImageStarter))
 
         if self.controller.shaper is not None:
+            plans += [("Fast GVD Scan", "ei.car", FastGVDScanStarter)]
             plans += [("GVD Scan", "fa5s.stopwatch", GVDScanStarter)]
             plans += [("2D Measurement", "ei.graph", AOMTwoDStarter)]
 
@@ -496,8 +497,9 @@ def start_app():
 
     import asyncio as aio
     import traceback
-    from pyqtgraph import mkQApp
+    from pyqtgraph import mkQApp, setConfigOption
 
+    setConfigOption("antialias", True)
     app = mkQApp()
 
     app.setOrganizationName("USD")
