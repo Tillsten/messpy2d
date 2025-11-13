@@ -94,7 +94,9 @@ class AOM(IDevice):
         if self.calib:
             self.set_calib(self.calib)
             self.update_dispersion_compensation()
-        self.set_wave_amp(self.wave_amp)
+            self.set_wave_amp(self.wave_amp)
+        else: 
+            self.load_full_mask()
 
     def setup_dac(self):
         self.lock.lock()
@@ -314,8 +316,6 @@ class AOM(IDevice):
 
         mask = (self.amp_fac * MAX_16_Bit * self.mask).astype("int16")
         self.scaled_mask = mask
-        assert mask.dtype == np.int16
-        assert (mask.size % PIXEL) == 0
         frames = mask.size // PIXEL
         self.end_playback()
         mask1 = np.zeros_like(mask)
