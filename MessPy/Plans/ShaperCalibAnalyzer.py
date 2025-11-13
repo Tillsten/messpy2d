@@ -121,8 +121,8 @@ class CalibView(QWidget):
         self.row.addWidget(bb)
         # bb.setFixedWidth(400)
         bb.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
-        self.row.setContentsMargins(20, 20, 20, 20)
-        self.row.setSpacing(10)
+
+        self.row.setSpacing(50)
         bb.accepted.connect(lambda: self.sigCalibrationAccepted.emit(self.coeff))
         bb.rejected.connect(self.close)
         bb.rejected.connect(self.sigCalibrationCanceled.emit)
@@ -133,7 +133,6 @@ class CalibView(QWidget):
         self.layout().addWidget(self.plot_calib)
         self.layout().addLayout(self.row)
 
-        self.layout().setSpacing(10)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.plot_raw.plot(self.x, self.y_full, pen=mkPen("g", width=3))
         self.plot_raw.plot(self.x, self.y_single, pen=mkPen("y", width=3))
@@ -227,7 +226,7 @@ class CalibView(QWidget):
         if len(p_trains) > 1 and len(p_single) > 0:
             p_single = [p_single[np.argmax(y_single[p_single])]]
             a = np.arange(0, len(p_trains)) * self.dist
-            same_peak_idx = np.argmin(abs(self.x[p_trains] - p_single))
+            same_peak_idx = np.argmin(abs(self.x[p_trains] - self.x[p_single]))
             pix0 = self.single
             pixel = a - a[same_peak_idx] + pix0
 
@@ -303,6 +302,7 @@ if __name__ == "__main__":
     # aom = AOM()
     print(x.shape, y_single.shape, y_train.shape, y_full.shape)
     app = QApplication([])
+    app.setStyle("Fusion")
     import pyqtgraph as pg
 
     pg.setConfigOption("antialias", True)
