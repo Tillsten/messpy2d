@@ -6,6 +6,8 @@ This project is an experimental control for ultrafast spectroscopy. While it's
 primarily designed for our specific use case, some of the device interfaces may
 be useful for others.
 
+![MessPy Screenshot](messpy_screenshot.png)
+
 ## Supported Hardware
 
 ### Detectors

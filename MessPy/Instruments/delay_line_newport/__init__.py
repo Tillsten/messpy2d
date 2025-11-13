@@ -57,6 +57,8 @@ class NewportDelay(IDelayLine):
     rot: serial.Serial = attr.ib()
     last_pos: float = 0
     pos_sign = -1.0
+    min_pos_mm: float = 0.0
+    max_pos_mm: float = 26.0
     _busy_cnt = 0
     """
     At least answer n-times with true for is_moving after calling move. Workaround since
