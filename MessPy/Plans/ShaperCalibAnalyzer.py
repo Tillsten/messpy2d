@@ -83,12 +83,6 @@ class CalibView(QWidget):
         self.plot_calib = PlotWidget()
         self.plot_raw = PlotWidget()
 
-        self.layout().addWidget(self.plot_norm)
-        self.layout().addWidget(self.plot_raw)
-        self.layout().addWidget(self.plot_calib)
-
-        self.setContentsMargins(0, 0, 0, 0)
-
         self.row = QHBoxLayout()
         self.sb_filter = QSpinBox()
         self.sb_filter.setValue(self.filter)
