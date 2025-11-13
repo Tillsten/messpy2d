@@ -26,6 +26,8 @@ qtawesome = ">=1.3.1,<2"
 qasync = ">=0.27.1,<0.28"
 pyserial = ">=3.5,<4"
 matplotlib = ">=3.9.2,<4"
+magicgui = ">=0.10.1,<0.11"
+colorcet = ">=3.1.0,<4"
 
 [pypi-dependencies]
 nicelib = ">=0.7.1, <0.8"
