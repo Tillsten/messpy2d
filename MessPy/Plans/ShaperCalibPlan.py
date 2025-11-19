@@ -1,18 +1,13 @@
-from MessPy.Plans.PlanBase import Plan
-from MessPy.ControlClasses import Cam
-from MessPy.Instruments.dac_px import AOM
-import numpy as np
-from pyqtgraph.parametertree import Parameter, ParameterTree
-import pyqtgraph as pg
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import *
-from loguru import logger
-from typing import List, Callable, Tuple, ClassVar
-from MessPy.Instruments.interfaces import ICam
-import sys
+from typing import ClassVar, Iterable, List, Tuple
 
 import attr
+import numpy as np
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import *
 
+from MessPy.ControlClasses import Cam
+from MessPy.Instruments.dac_px import AOM
+from MessPy.Plans.PlanBase import Plan
 
 
 @attr.s(auto_attribs=True, cmp=False, kw_only=True)
@@ -20,13 +15,13 @@ class CalibPlan(Plan):
     cam: Cam
     dac: AOM
     points: List[float]
-    amps: List[List[float]] = attr.Factory(list)
+    amps: List[Iterable[float]] = attr.Factory(list)
     single_spectra: np.ndarray = attr.ib(init=False)
     num_shots: int = 100
     separation: int = 500
     width: int = 50
     single: int = 6000
-    start_pos: Tuple[float, float] = 0
+    start_pos: Tuple[float, float] = (0.0, 0.0)
     check_zero_order: bool = True
     channel: int = 67
 
@@ -35,27 +30,23 @@ class CalibPlan(Plan):
 
     def __attrs_post_init__(self):
         super(CalibPlan, self).__attrs_post_init__()
+        assert self.cam.changeable_wavelength
         self.single_spectra = np.zeros((self.cam.channels, len(self.points)))
-        gen = self.make_step_generator()
-        self.make_step = lambda: next(gen)
-    
-    def make_step_generator(self):
-        yield
+
+    def make_step_gen(self):
+        initial_shots = self.cam.shots
+        initial_wl = self.cam.get_wavelength()
         self.sigPlanStarted.emit()
         yield
         self.cam.set_shots(self.num_shots)
-        initial_wl = self.cam.get_wavelength()
-        initial_shots = self.cam.shots
+        yield
         if self.check_zero_order:
-    
-            logger.info('Checking Zero-Order')
-            self.cam.cam.spectrograph.set_wavelength(0, 10)
-            
+            assert self.cam.cam.spectrograph is not None
+            self.cam.set_wavelength(0, 10)
             reading, ch = self.cam.cam.get_spectra(3)
             pump_spec = reading["Probe2"]
-            self.channel = np.argmax(pump_spec.mean)  # typing: ignore
-            yield
-            
+            self.channel = int(np.argmax(pump_spec.mean))  # typing: ignore
+
         self.single_spectra = np.zeros((self.cam.channels, len(self.points)))
         logger.info('Loading Calib mask')
         self.dac.load_mask(
@@ -65,15 +56,15 @@ class CalibPlan(Plan):
         )
         for i, p in enumerate(self.points):
             self.read_point(i, p)
+            yield
             self.sigStepDone.emit()
             yield
         self.cam.set_wavelength(initial_wl)
-        self.cam.set_shots(initial_shots)        
+        self.cam.set_shots(initial_shots)
         self.sigPlanFinished.emit()
 
-    def read_point(self, i, p):        
-        logger.info('Reading Point')
-        self.cam.cam.spectrograph.set_wavelength(p, 10)
-        spectra = self.cam.cam.get_spectra(3)[0]
-        self.amps.append(spectra["Probe2"].frame_data[self.channel, :])
-        self.single_spectra[:, i] = spectra["Probe2"].frame_data[:, 1]
+    def read_point(self, i, p):
+        self.cam.set_wavelength(p, 10)
+        spectra, ch = self.cam.cam.get_spectra(3)
+        self.amps.append(spectra["Probe2"].frame_data[self.channel, :])  # type: ignore
+        self.single_spectra[:, i] = spectra["Probe2"].frame_data[:, 1]  # type: ignore

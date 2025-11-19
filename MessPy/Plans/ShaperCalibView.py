@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from PySide6.QtCore import Signal, Slot
-from loguru import logger
 from pyqtgraph import TextItem, ScatterPlotItem
 import attr
 import numpy as np
@@ -28,11 +27,12 @@ from MessPy.Plans.ShaperCalibPlan import CalibPlan
 from MessPy.Plans.ShaperCalibAnalyzer import CalibView
 from MessPy.Config import config
 from MessPy.Instruments.dac_px import AOM
+from MessPy.ControlClasses import Cam
 
 
 @attr.s(auto_attribs=True)
 class CalibScanView(QWidget):
-    cam: I.ICam
+    cam: Cam
     dac: AOM
     plan: Optional[CalibPlan] = None
 
@@ -69,10 +69,10 @@ class CalibScanView(QWidget):
         self.info_label = QLabel()
         self.layout().addWidget(self.info_label)
         self.setMinimumSize(1200, 600)
-        
+
     @Slot()
     def start(self):
-        
+
         logger.info("Plan Started")
         s = self.params.saveState()
         config.exp_settings["CalibSettings"] = s
@@ -86,7 +86,7 @@ class CalibScanView(QWidget):
         for p in self.params:
             p.setReadonly(True)
 
-        
+
         self.params.child("Start Calibration").remove()
         self.plan = CalibPlan(
             cam=self.cam,
@@ -95,7 +95,7 @@ class CalibScanView(QWidget):
             num_shots=self.params["Shots"],
         )
         self.sigPlanCreated.emit(self.plan)
-        
+
 
         self.plan.sigPlanFinished.connect(self.analyse)
         self.plan.sigStepDone.connect(self.update_view)
@@ -120,6 +120,7 @@ class CalibScanView(QWidget):
         """)
 
     def analyse(self):
+        assert self.plan is not None
         plan = self.plan
         x = np.array(plan.points)
         y_train = np.array(plan.amps)[:, 0]
