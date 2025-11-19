@@ -1,59 +1,50 @@
-from MessPy.Plans.PlanBase import AsyncPlan
-from MessPy.ControlClasses import Cam
-from MessPy.Instruments.dac_px import AOM
-import numpy as np
-from pyqtgraph.parametertree import Parameter, ParameterTree
-import pyqtgraph as pg
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import *
-from qasync import QEventLoop, asyncSlot
-from typing import List, Callable, Tuple, ClassVar
-from MessPy.Instruments.interfaces import ICam
-import asyncio
-import asyncio as aio
-import sys
+from typing import ClassVar, Iterable, List, Tuple
 
 import attr
+import numpy as np
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import *
 
-sys.path.append("../")
+from MessPy.ControlClasses import Cam
+from MessPy.Instruments.dac_px import AOM
+from MessPy.Plans.PlanBase import Plan
 
 
 @attr.s(auto_attribs=True, cmp=False, kw_only=True)
-class CalibPlan(AsyncPlan):
+class CalibPlan(Plan):
     cam: Cam
     dac: AOM
     points: List[float]
-    amps: List[List[float]] = attr.Factory(list)
+    amps: List[Iterable[float]] = attr.Factory(list)
     single_spectra: np.ndarray = attr.ib(init=False)
     num_shots: int = 100
     separation: int = 500
     width: int = 50
     single: int = 6000
-    start_pos: Tuple[float, float] = 0
+    start_pos: Tuple[float, float] = (0.0, 0.0)
     check_zero_order: bool = True
     channel: int = 67
-    is_async: bool = True
 
     sigStepDone = Signal()
     plan_shorthand: ClassVar[str] = "Calibration"
 
     def __attrs_post_init__(self):
         super(CalibPlan, self).__attrs_post_init__()
+        assert self.cam.changeable_wavelength
         self.single_spectra = np.zeros((self.cam.channels, len(self.points)))
 
-    async def plan(self):
+    def make_step_gen(self):
+        initial_shots = self.cam.shots
+        initial_wl = self.cam.get_wavelength()
         self.sigPlanStarted.emit()
         self.cam.set_shots(self.num_shots)
-        loop = asyncio.get_running_loop()
-        initial_wl = self.cam.get_wavelength()
-        initial_shots = self.cam.shots
+        yield
         if self.check_zero_order:
-            await loop.run_in_executor(
-                None, self.cam.cam.spectrograph.set_wavelength, 0, 10
-            )
-            reading, ch = await loop.run_in_executor(None, self.cam.cam.get_spectra, 3)
+            assert self.cam.cam.spectrograph is not None
+            self.cam.set_wavelength(0, 10)
+            reading, ch = self.cam.cam.get_spectra(3)
             pump_spec = reading["Probe2"]
-            self.channel = np.argmax(pump_spec.mean)  # typing: ignore
+            self.channel = int(np.argmax(pump_spec.mean))  # typing: ignore
 
         self.single_spectra = np.zeros((self.cam.channels, len(self.points)))
         self.dac.load_mask(
@@ -62,17 +53,15 @@ class CalibPlan(AsyncPlan):
             )
         )
         for i, p in enumerate(self.points):
-            await self.read_point(i, p)
+            self.read_point(i, p)
+            yield
             self.sigStepDone.emit()
         self.cam.set_wavelength(initial_wl)
         self.cam.set_shots(initial_shots)
         self.sigPlanFinished.emit()
 
-    async def read_point(self, i, p):
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(
-            None, self.cam.cam.spectrograph.set_wavelength, p, 10
-        )
-        spectra, ch = await loop.run_in_executor(None, self.cam.cam.get_spectra, 3)
-        self.amps.append(spectra["Probe2"].frame_data[self.channel, :])
-        self.single_spectra[:, i] = spectra["Probe2"].frame_data[:, 1]
+    def read_point(self, i, p):
+        self.cam.set_wavelength(p, 10)
+        spectra, ch = self.cam.cam.get_spectra(3)
+        self.amps.append(spectra["Probe2"].frame_data[self.channel, :])  # type: ignore
+        self.single_spectra[:, i] = spectra["Probe2"].frame_data[:, 1]  # type: ignore

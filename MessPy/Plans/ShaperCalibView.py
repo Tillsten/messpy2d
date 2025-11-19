@@ -1,5 +1,5 @@
 from pyqtgraph import PlotWidget
-from qasync import asyncSlot
+
 from PySide6.QtWidgets import (
     QWidget,
     QApplication,
@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QMessageBox,
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from pyqtgraph import TextItem, ScatterPlotItem
 import attr
 import numpy as np
@@ -28,11 +28,12 @@ from MessPy.Plans.ShaperCalibPlan import CalibPlan
 from MessPy.Plans.ShaperCalibAnalyzer import CalibView
 from MessPy.Config import config
 from MessPy.Instruments.dac_px import AOM
+from MessPy.ControlClasses import Cam
 
 
 @attr.s(auto_attribs=True)
 class CalibScanView(QWidget):
-    cam: I.ICam
+    cam: Cam
     dac: AOM
     plan: Optional[CalibPlan] = None
 
@@ -93,8 +94,8 @@ class CalibScanView(QWidget):
         self.plan.sigPlanFinished.connect(self.analyse)
         self.plan.sigStepDone.connect(self.update_view)
 
-    @asyncSlot()
-    async def update_view(self):
+    @Slot()
+    def update_view(self):
         assert self.plan is not None
         plan = self.plan
 
@@ -113,6 +114,7 @@ class CalibScanView(QWidget):
         """)
 
     def analyse(self):
+        assert self.plan is not None
         plan = self.plan
         x = np.array(plan.points)
         y_train = np.array(plan.amps)[:, 0]
