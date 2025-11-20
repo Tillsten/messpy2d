@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Messpy-2D Edition")
-        self.setWindowIcon(qta.icon("fa.play"))
+        self.setWindowIcon(qta.icon("fa6s.play"))
         self.controller = controller  # controller
         logger.info("Creating loop thread")
         self.controller_thread = QThread()
@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
 
             if self.controller.shaper.fm1 is not None:
                 plans += [("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)]
-       
+
 
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
@@ -278,10 +278,10 @@ class CommandMenu(QWidget):
             if result == QMessageBox.Yes:
                 c.stop_plan()
 
-        stop_plan_but = QPushButton(qta.icon("fa.stop"), "Stop")
+        stop_plan_but = QPushButton(qta.icon("fa6s.stop"), "Stop")
         stop_plan_but.clicked.connect(ask_stop)
 
-        pause_plan_but = QPushButton(text="Pause plan", icon=qta.icon("fa.pause"))
+        pause_plan_but = QPushButton(text="Pause plan", icon=qta.icon("fa6s.pause"))
         pause_plan_but.clicked.connect(lambda: setattr(c, "pause_plan", True))
 
         reopen_planview_but = QPushButton(
@@ -295,7 +295,7 @@ class CommandMenu(QWidget):
             but.setDisabled(True)
 
         cb_running = QPushButton(
-            text="Running", icon=qta.icon("fa.play", color="white")
+            text="Running", icon=qta.icon("fa6s.play", color="white")
         )
         cb_running.setCheckable(True)
         cb_running.setChecked(True)
@@ -329,8 +329,8 @@ class CommandMenu(QWidget):
         from .ShaperRotStages import ShaperControl
 
         self.shaper_controls = ShaperControl(
-            sh.rot1, sh.rot2, sh, 
-            folding_mirror_1=getattr(sh, "fm1", None), 
+            sh.rot1, sh.rot2, sh,
+            folding_mirror_1=getattr(sh, "fm1", None),
             folding_mirror_2=getattr(sh, "fm2", None)
         )
         but = QPushButton("Shaper Contorls")

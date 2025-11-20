@@ -53,7 +53,7 @@ class Cam(QObject):
         if self.shots > 1000:
             self.set_shots(20)
         self.read_cam()
-        c : I.ICAm =  self.cam
+        c : I.ICam =  self.cam
         self.channels = c.channels
         self.lines = c.lines
         self.sig_lines = c.sig_lines
@@ -91,9 +91,9 @@ class Cam(QObject):
         try:
             shots = int(shots)
             assert shots > 1
-            self.shots = shots            
+            self.shots = shots
             self.cam.set_shots(self.shots)
-            config.shots = shots
+            #config.shots = shots
             self.sigShotsChanged.emit(self.shots)
         except ValueError:
             pass
@@ -286,7 +286,7 @@ class Controller(QObject):
                 t0 = time.time()
                 self.start_standard_read()
                 self.standard_read()
-                # logger.info(f"Standard read took {(time.time()-t0)*1000} ms")
+                logger.info(f"Standard read took {(time.time()-t0)*1000} ms")
                 self.loop_finished.emit()
         elif getattr(self.plan, "is_async", False) and self.plan.task:
             t = self.plan.task
