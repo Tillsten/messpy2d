@@ -169,6 +169,10 @@ class AOM(IDevice):
     def bragg_wf(self, amp, phase):
         """Calculates a Bragg-correct AOM waveform for given phase and shape"""
         assert self.calib is not None
+       
+        if phase.ndim == 1:
+            phase = phase[:, None]
+        assert phase.shape[0] == PIXEL
         F = np.poly1d(np.polyint(self.calib))
         phase_term = (
             2
@@ -239,6 +243,10 @@ class AOM(IDevice):
             if len(amp.shape) == 1:
                 amp = amp[:, None]
             self.amp = amp
+
+    def reset_masks(self) -> None:
+        self.set_amp_and_phase(amp=np.ones((PIXEL, 1)), 
+                               phase=np.zeros((PIXEL, 1)))
 
     def generate_waveform(self) -> int:
         """

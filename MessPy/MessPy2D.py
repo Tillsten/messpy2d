@@ -499,7 +499,7 @@ def start_app():
     import traceback
 
     from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
-    GroupParameter.value = lambda self: None
+    GroupParameter.value = lambda self: self.opts.get('value', None)
     from pyqtgraph import mkQApp, setConfigOption
 
     setConfigOption("antialias", True)

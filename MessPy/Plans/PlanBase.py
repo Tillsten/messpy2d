@@ -23,11 +23,12 @@ sample_parameters = {
     "children": [
         dict(name="Sample", type="str", value=""),
         dict(name="Solvent", type="str", value=""),
-        dict(name="Excitation", type="str"),
-        dict(name="Thickness", type="str"),
-        dict(name="Annotations", type="str"),
-        dict(name="Users:", type="str"),
+        dict(name="Excitation", type="str", value=""),
+        dict(name="Thickness", type="str", value=""),
+        dict(name="Annotations", type="str", value=""),
+        dict(name="Users:", type="str", value=""),
     ],
+    
 }
 
 

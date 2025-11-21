@@ -7,6 +7,8 @@ from itertools import cycle
 
 import pyqtgraph as pg
 import pyqtgraph.parametertree as pt
+from pyqtgraph.parametertree import Parameter
+
 from pyqtgraph import PlotItem
 from PySide6.QtCore import Qt, Slot, QTimer, QObject, QSettings
 from PySide6.QtGui import QPalette, QColor, QIcon
@@ -615,8 +617,19 @@ def remove_nodes(a):
     return a
 
 
-def make_entry(paras):
-    plan_settings = remove_nodes(paras.getValues())
+
+
+def getValuesGroupFriendly(para: Parameter):
+    vals = {}
+    for ch in para:        
+        if ch.hasValue():
+            vals[ch.name()] = (ch.value(), getValuesGroupFriendly(ch))
+        else:
+            vals[ch.name()] = (None, getValuesGroupFriendly(ch))
+    return vals
+
+def make_entry(paras: Parameter):
+    plan_settings = remove_nodes(getValuesGroupFriendly(paras))
     return {"Plan Settings": plan_settings}
 
 

@@ -115,7 +115,7 @@ class ScanFoldingMirrorsStarter(PlanStartDialog):
         self.paras = pt.Parameter.create(
             name="Scan Folding Mirrors", type="group", children=params
         )
-        self.paras.getValues()
+        
         self.save_defaults()
 
     def create_plan(self, controller: Controller):

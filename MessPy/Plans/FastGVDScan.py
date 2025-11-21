@@ -69,6 +69,7 @@ class FastGVDScan(Plan):
         tod = self.tod * 1000
         fod = self.fod * 1000
         self.aom.do_dispersion_compensation = False
+        self.aom.chopped = False
         for i, val in enumerate(self.gvd_list):
             coefs = [0, gvd, tod, fod]
             if self.scan_mode == "GVD":
@@ -80,21 +81,26 @@ class FastGVDScan(Plan):
 
             phase = self.aom.generate_dispersion_compensation_phase(coefs)
             masks.append(phase)
-
+            masks.append(phase) # Amp will be set to zero.
+            
 
             # Since we also want to read out the pump-probe signal, we need to
             # add an 0 mask for the unpumped signal
-        self.aom.set_amp_and_phase(phase=np.array(masks).T)
+        phase_masks = np.array(masks).T
+        amp_masks =   np.ones_like(phase_masks)
+        amp_masks[:, ::2] = 0
+        self.aom.set_amp_and_phase(phase=phase_masks, amp=amp_masks)
         self.aom.generate_waveform()
 
     def make_step_gen(self):
+        self.status = 'running'
         self.generate_masks()
         self.cam.set_shots(self.repeats * 2 * len(self.gvd_list))
         
         for i in range(10):
             self.specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
 
-            self.iter = i
+            self.iter = i+1
             for s in ["Probe1", "Probe2"]:
                 fd = self.specs[s].frame_data
 
