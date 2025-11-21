@@ -11,15 +11,15 @@ class DelayParameter(GroupParameter):
         GroupParameter.__init__(self, **opts)
         time_parameters = [{'name': 'Linear Range (-)', 'suffix': 'ps', 'type': 'float', 'value': -1, 'step': 0.05},
                            {'name': 'Linear Range (+)', 'suffix': 'ps', 'type': 'float', 'value': 1, 'step': 0.05},
-                           {'name': 'Linear Range (step)', 'suffix': 'ps', 'type': 'float', 'min': 0.001, 'step': 0.05},
-                           {'name': 'Logarithmic Scan', 'type': 'bool'},
-                           {'name': 'Logarithmic End', 'type': 'float', 'suffix': 'ps',
+                           {'name': 'Linear Range (step)', 'suffix': 'ps', 'type': 'float', 'min': 0.001, 'value': 0.1, 'step': 0.05},
+                           {'name': 'Logarithmic Scan', 'type': 'bool', 'value': False},
+                           {'name': 'Logarithmic End', 'type': 'float', 'suffix': 'ps', 
                             'min': 0.1, 'value':100},
-                           {'name': 'Logarithmic Points', 'type': 'int', 'min': 0},
+                           {'name': 'Logarithmic Points', 'type': 'int', 'min': 0, 'value': 20},
                            dict(name="Add pre-zero times", type='bool', value=False),
                            dict(name="Num pre-zero points", type='int', value=10, min=0, max=20),
                            dict(name="Pre-Zero pos", type='float', value=-60., suffix='ps'),
-                           dict(name='Time-points', type='str', readonly=True),
+                           dict(name='Time-points', type='str', readonly=True, value=''),
                            ]
         self.addChildren(time_parameters)
         self.out_str = self.child('Time-points')

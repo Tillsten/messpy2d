@@ -497,10 +497,14 @@ def start_app():
 
     import asyncio as aio
     import traceback
+
+    from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
+    GroupParameter.value = lambda self: None
     from pyqtgraph import mkQApp, setConfigOption
 
     setConfigOption("antialias", True)
     app = mkQApp()
+
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")

@@ -43,14 +43,15 @@ class FastGVDScan(Plan):
         if self.aom.calib is None:
             raise ValueError("Shaper must have an calibration")
 
-        self.probe = np.zeros((n_disp, n_pix))
-        self.probe2 = np.zeros((n_disp, n_pix))
-        self.ref = np.zeros((n_disp, n_pix))
-        self.signal = np.zeros((n_disp, n_pix))
-        self.signal2 = np.zeros((n_disp, n_pix))
+        self.probe = np.zeros((n_disp, n_pix)).T
+        self.probe2 = np.zeros((n_disp, n_pix)).T
+        self.ref = np.zeros((n_disp, n_pix)).T
+        self.signal = np.zeros((n_disp, n_pix)).T
+        self.signal2 = np.zeros((n_disp, n_pix)).T
         self.settings_before["shots"] = self.cam.shots
-        for p in ["gvd", "tod", "fod"]:
+        for p in ["gvd", "tod", "fod", "do_dispersion_compensation"]:
             self.settings_before[p] = getattr(self.aom, p)
+            
         gen = self.make_step_gen()
         self.shots = self.repeats * len(self.gvd_list) * 2
         if self.shots > 10_000:
@@ -62,12 +63,12 @@ class FastGVDScan(Plan):
 
     def generate_masks(self):
         logger.info("Generating Masks")
-        self.aom: AOM
         masks = []
+
         gvd = self.gvd * 1000
         tod = self.tod * 1000
         fod = self.fod * 1000
-
+        self.aom.do_dispersion_compensation = False
         for i, val in enumerate(self.gvd_list):
             coefs = [0, gvd, tod, fod]
             if self.scan_mode == "GVD":
@@ -78,42 +79,50 @@ class FastGVDScan(Plan):
                 coefs[3] = val * 1000
 
             phase = self.aom.generate_dispersion_compensation_phase(coefs)
-            mask = self.aom.bragg_wf(self.aom.amp, -phase)
-            masks.append(mask)
+            masks.append(phase)
+
+
             # Since we also want to read out the pump-probe signal, we need to
             # add an 0 mask for the unpumped signal
-            masks.append(0 * mask)
-
-        masks = np.array(masks)
-        self.aom.load_mask(masks)
+        self.aom.set_amp_and_phase(phase=np.array(masks).T)
+        self.aom.generate_waveform()
 
     def make_step_gen(self):
         self.generate_masks()
-        self.cam.set_shots(self.repeats * len(self.gvd_list))
-        specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
+        self.cam.set_shots(self.repeats * 2 * len(self.gvd_list))
+        
+        for i in range(10):
+            self.specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
 
-        for s in ["Probe1", "Probe2"]:
-            fd = specs[s].frame_data
-            if fd is None:
-                raise RuntimeError(f"Frame data for {s} is None")
-            mean = (fd[:, 0::2] + fd[:, 1::2]) / 2.0
-            sig = fd[:, 0::2] - fd[:, 1::2]
-            sig /= mean
-            sig = -1000 * np.log10(sig)
-            if s == "Probe1":
-                self.probe = mean
-            else:
-                self.probe2 = mean
-        yield
-        self.sigPointRead.emit()
+            self.iter = i
+            for s in ["Probe1", "Probe2"]:
+                fd = self.specs[s].frame_data
+
+                if fd is None:
+                    raise RuntimeError(f"Frame data for {s} is None")
+                mean = (fd[:, 0::2] + fd[:, 1::2]) / 2.0
+                with np.errstate(all='ignore'):
+                    sig = fd[:, 0::2] / fd[:, 1::2]    
+                    sig = -1000 * np.log10(sig)
+                if s == "Probe1":
+                    self.probe += mean 
+                    self.signal += sig
+                else:
+                    self.probe2 += mean
+                    self.signal2 += sig
+            yield
+            self.sigPointRead.emit()
         self.save()
         yield
+        self.sigPlanFinished.emit()
 
     def restore_state(self):
         self.cam.set_shots(self.settings_before["shots"])
-        for p in ["gvd", "tod", "fod"]:
+        for p in ["gvd", "tod", "fod", "do_dispersion_compensation"]:
             setattr(self.aom, p, self.settings_before[p])
         self.aom.update_dispersion_compensation()
+        self.aom.reset_masks()
+        self.generate_masks()
 
     def save(self):
         return
