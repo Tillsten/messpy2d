@@ -16,8 +16,9 @@ Created on Tue Jun 03 15:41:22 2014
 import time
 import attr
 import serial
-from PySide6.QtCore import QObject, Signal, QTimer
+from PySide6.QtCore import QObject, Signal, QTimer, QMutex, QMutexLocker
 from MessPy.Instruments.interfaces import IDelayLine
+
 
 controller_states = {
     "0A": "NOT REFERENCED from reset",
@@ -52,13 +53,15 @@ class DSignals(QObject):
 
 @attr.s(auto_attribs=True)
 class NewportDelay(IDelayLine):
-    name: str = "Rotation Stage"
+    name: str = "Newport AGP stage"
     comport: str = "COM7"
     rot: serial.Serial = attr.ib()
     last_pos: float = 0
     pos_sign = -1.0
     min_pos_mm: float = 0.0
-    max_pos_mm: float = 26.0
+    max_pos_mm: float = 25.0
+    lock: QMutex = attr.Factory(QMutex)
+
     _busy_cnt = 0
     """
     At least answer n-times with true for is_moving after calling move. Workaround since
@@ -73,14 +76,15 @@ class NewportDelay(IDelayLine):
 
     def __attrs_post_init__(self):
         super(NewportDelay, self).__attrs_post_init__()
-        state = self.controller_state()
-        if state.startswith("DISABLE"):
-            self.w("1MM1")
-        elif state.startswith("NOT REFERENCED"):
-            self.w(b"1RS")
-            self.rot.write(b"1OR\r\n")
-            while self.controller_state().startswith("HOMING"):
-                time.sleep(0.3)
+        with QMutexLocker(self.lock):
+            state = self.controller_state()
+            if state.startswith("DISABLE"):
+                self.w("1MM1")
+            elif state.startswith("NOT REFERENCED"):
+                self.w(b"1RS")
+                self.rot.write(b"1OR\r\n")
+                while self.controller_state().startswith("HOMING"):
+                    time.sleep(0.3)
 
         if self.last_pos != 0:
             self.move_mm(self.last_pos)
@@ -95,9 +99,10 @@ class NewportDelay(IDelayLine):
         if isinstance(pos, str):
             pos = float(pos)
         setter_str = f"1PA{pos}\r\n"
-        self.rot.write(setter_str.encode("utf-8"))
-        self.rot.timeout = 3
-        self._busy_cnt = 2
+        with QMutexLocker(self.lock):
+            self.rot.write(setter_str.encode("utf-8"))
+            Self.rot.timeout = 3
+            self._busy_cnt = 2
 
     def get_state(self) -> dict:
         return dict(last_pos=self.last_pos, home_pos=self.home_pos)
@@ -111,22 +116,24 @@ class NewportDelay(IDelayLine):
 
     def get_pos_mm(self):
         """Returns the position"""
-        self.w("1TP")
-        self.rot.timeout = 1
-        try:
-            ans = self.rot.read_until(b"\r\n")
-            ans = ans.decode()
-            self.last_pos = float(ans[ans.find("TP") + 2 : -2])
-            return self.last_pos
-        except ValueError:
-            print(ans)
-            return 0
+        with QMutexLocker(self.lock):
+            self.w("1TP")
+            self.rot.timeout = 1
+            try:
+                ans = self.rot.read_until(b"\r\n")
+                ans = ans.decode()
+                self.last_pos = float(ans[ans.find("TP") + 2 : -2])
+                return self.last_pos
+            except ValueError:
+                print(ans)
+                return 0
 
     def is_moving(self):
-        if self._busy_cnt > 0:
-            self._busy_cnt -= 1
-            return True
-        return self.controller_state().startswith("MOVING")
+        with QMutexLocker(self.lock):
+            if self._busy_cnt > 0:
+                self._busy_cnt -= 1
+                return True
+            return self.controller_state().startswith("MOVING")
 
 
 if __name__ == "__main__":
