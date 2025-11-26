@@ -1,5 +1,4 @@
 from pyqtgraph import PlotWidget
-from qasync import asyncSlot
 from PySide6.QtWidgets import (
     QWidget,
     QApplication,
@@ -12,7 +11,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QMessageBox,
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from pyqtgraph import TextItem, ScatterPlotItem
 import attr
 import numpy as np
@@ -93,8 +92,8 @@ class CalibScanView(QWidget):
         self.plan.sigPlanFinished.connect(self.analyse)
         self.plan.sigStepDone.connect(self.update_view)
 
-    @asyncSlot()
-    async def update_view(self):
+    @Slot()
+    def update_view(self):
         assert self.plan is not None
         plan = self.plan
 
