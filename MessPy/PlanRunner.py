@@ -24,8 +24,6 @@ class PlanRunner(QObject):
         self.plan = plan
         self.state = "running"
         self.sigPlanStarted.emit(True)
-        if not plan.is_async:
-            pass
 
     @Slot()
     def pause_plan(self):

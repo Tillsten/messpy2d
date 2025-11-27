@@ -101,7 +101,7 @@ class NewportDelay(IDelayLine):
         setter_str = f"1PA{pos}\r\n"
         with QMutexLocker(self.lock):
             self.rot.write(setter_str.encode("utf-8"))
-            Self.rot.timeout = 3
+            self.rot.timeout = 3
             self._busy_cnt = 2
 
     def get_state(self) -> dict:

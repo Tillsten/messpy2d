@@ -1,13 +1,13 @@
 import threading
 import time
 import typing as T
-from asyncio import Task
+
 
 import numpy as np
 from attr import Factory, attrib, attrs, define
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
-from qasync import Slot
+
 
 import MessPy.Instruments.interfaces as I
 from MessPy.Config import config
@@ -229,8 +229,7 @@ class Controller(QObject):
     rot_stage: T.Optional[I.IRotationStage] = _rot_stage
     sample_holder: T.Optional[I.ILissajousScanner] = _sh
     shaper: T.Optional[object] = _shaper
-    power_meter: T.Optional[I.IPowerMeter] = _power_meter
-    async_tasks: list = Factory(list)
+    power_meter: T.Optional[I.IPowerMeter] = _power_meter    
     plan: T.Optional["Plan"] = None
     pause_plan: bool = False
 
@@ -287,23 +286,11 @@ class Controller(QObject):
                 self.start_standard_read()
                 self.standard_read()
                 # logger.info(f"Standard read took {(time.time()-t0)*1000} ms")
-                self.loop_finished.emit()
-        elif getattr(self.plan, "is_async", False) and self.plan.task:
-            t = self.plan.task
-            t: aio.Task
-            # print(t)
-            if t.done():
-                if t.exception():
-                    t.cancel()
-                    self.plan = None
-                    raise t.exception()
-                else:
-                    self.plan.task = None
-
             time.sleep(0.02)
-            self.loop_finished.emit()
+            
         elif hasattr(self.plan, "make_step"):
             try:
+                print('make_step')
                 self.plan.make_step()
                 time.sleep(0.02)
             except StopIteration:
@@ -312,7 +299,9 @@ class Controller(QObject):
                 logger.error(f"Error in loop: {e}")
                 self.pause_plan = True
             self.loop_finished.emit()
-
+        else:
+            raise ValueError("Plan is wrong")
+        self.loop_finished.emit()
     @Slot(object)
     def start_plan(self, plan):
         logger.info(f"Starting plan: {plan.plan_shorthand}:{plan.name}")

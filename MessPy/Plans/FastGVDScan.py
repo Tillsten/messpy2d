@@ -97,10 +97,10 @@ class FastGVDScan(Plan):
         self.generate_masks()
         self.cam.set_shots(self.repeats * 2 * len(self.gvd_list))
         
-        for i in range(10):
+        while self.status == 'running':
             self.specs = self.cam.cam.get_spectra(len(self.gvd_list) * 2)[0]
 
-            self.iter = i+1
+            self.iter = self.iter+1
             for s in ["Probe1", "Probe2"]:
                 fd = self.specs[s].frame_data
 
@@ -109,7 +109,7 @@ class FastGVDScan(Plan):
                 mean = (fd[:, 0::2] + fd[:, 1::2]) / 2.0
                 with np.errstate(all='ignore'):
                     sig = fd[:, 0::2] / fd[:, 1::2]    
-                    sig = -1000 * np.log10(sig)
+                    sig = 1000 * np.log10(sig)
                 if s == "Probe1":
                     self.probe += mean 
                     self.signal += sig
@@ -119,6 +119,8 @@ class FastGVDScan(Plan):
             yield
             self.sigPointRead.emit()
         self.save()
+        self.sigPlanStopped.emit()
+        self.restore_state()
         yield
         self.sigPlanFinished.emit()
 
@@ -136,5 +138,4 @@ class FastGVDScan(Plan):
     @Slot()
     def stop_plan(self):
         self.status = "stopped"
-        self.sigPlanStopped.emit()
-        self.restore_state()
+

@@ -1,9 +1,7 @@
-import asyncio
+
 from functools import cached_property
 import json
 import time
-import threading
-from asyncio import Task
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import ClassVar, Tuple, Optional, Callable, Generator, Any
@@ -100,7 +98,6 @@ class Plan(QObject):
     meta: dict = attr.Factory(dict)
     status: str = ""
     creation_dt: datetime = attr.Factory(datetime.now)
-    is_async: bool = False
     time_tracker: TimeTracker = attr.Factory(TimeTracker)
     file_name: Tuple[Path, Path] | None = None
 
@@ -267,22 +264,3 @@ class PointScan(ScanPlan):
         raise NotImplementedError
 
 
-@attr.s(auto_attribs=True, kw_only=True)
-class AsyncPlan(Plan):
-    is_async: bool = True
-    task: Task = attr.ib(init=False)
-
-    sigTaskCreated: ClassVar[Signal] = Signal()
-
-    async def plan(self):
-        raise NotImplementedError
-
-    def __attrs_post_init__(self):
-        super(AsyncPlan, self).__attrs_post_init__()
-        loop = asyncio.get_event_loop()
-        self.task = loop.create_task(self.plan(), name=self.name)
-
-    def stop_plan(self):
-        if self.task:
-            self.task.cancel()
-        return super().stop_plan()

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from PySide6.QtCore import Signal, Slot
+from loguru import logger
 from pyqtgraph import TextItem, ScatterPlotItem
 import attr
 import numpy as np
@@ -68,8 +69,11 @@ class CalibScanView(QWidget):
         self.info_label = QLabel()
         self.layout().addWidget(self.info_label)
         self.setMinimumSize(1200, 600)
-
+        
+    @Slot()
     def start(self):
+        
+        logger.info("Plan Started")
         s = self.params.saveState()
         config.exp_settings["CalibSettings"] = s
         start, stop, step = (
@@ -78,9 +82,12 @@ class CalibScanView(QWidget):
             self.params["Step (nm)"],
         )
         config.save()
-
         self.params.setReadonly(True)
-        # self.params.child("Start Calibration").setEnabled(False)
+        for p in self.params:
+            p.setReadonly(True)
+
+        
+        self.params.child("Start Calibration").remove()
         self.plan = CalibPlan(
             cam=self.cam,
             dac=self.dac,
@@ -88,6 +95,7 @@ class CalibScanView(QWidget):
             num_shots=self.params["Shots"],
         )
         self.sigPlanCreated.emit(self.plan)
+        
 
         self.plan.sigPlanFinished.connect(self.analyse)
         self.plan.sigStepDone.connect(self.update_view)

@@ -493,9 +493,6 @@ class DelayLineControl(QGroupBox):
 
 def start_app():
     import sys
-    import qasync
-
-    import asyncio as aio
     import traceback
 
     from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
@@ -532,10 +529,4 @@ def start_app():
 
     mw = MainWindow(Controller())
     mw.showMaximized()
-    loop = qasync.QEventLoop(app)
-    aio.set_event_loop(loop)
-    app_close_event = aio.Event()
-    app.aboutToQuit.connect(app_close_event.set)
-    with loop:
-        loop.run_until_complete(app_close_event.wait())
-    # app.exec()
+    app.exec()

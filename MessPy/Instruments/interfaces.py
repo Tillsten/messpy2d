@@ -1,5 +1,4 @@
 import abc
-import asyncio
 import atexit
 import contextlib
 import json
@@ -308,13 +307,6 @@ class IDelayLine(IDevice):
         self.home_pos = self.get_pos_mm()
         self.save_state()
 
-    async def async_move_mm(self, mm, do_wait=False):
-        self.move_mm(mm)
-        if do_wait:
-            while self.is_moving():
-                self.pos = self.get_pos_mm()
-                await asyncio.sleep(0.1)
-
 
 @attr.s(auto_attribs=True)
 class IShutter(IDevice):
@@ -376,12 +368,6 @@ class IRotationStage(IDevice):
 
     def move_relative(self, x):
         self.set_degrees(x + self.get_degrees())
-
-    async def async_set_degrees(self, deg: float, do_wait=False):
-        self.set_degrees(deg)
-        while self.is_moving():
-            self.sigDegreesChanged.emit(deg)
-            await asyncio.sleep(0.3)
 
 
 @attr.s(auto_attribs=True)

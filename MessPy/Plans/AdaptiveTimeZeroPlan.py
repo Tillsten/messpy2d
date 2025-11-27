@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal
 from scipy.special import erf
 
 from MessPy.ControlClasses import Cam, DelayLine
-from MessPy.Plans.PlanBase import AsyncPlan
+from MessPy.Plans.PlanBase import Plan
 
 
 @attr.s(auto_attribs=True)
@@ -37,11 +37,11 @@ def fit_step_function(t, data) -> ModelResult:
 
 
 @attr.s(auto_attribs=True, kw_only=True)
-class AdaptiveTimeZeroPlan(AsyncPlan):
+class AdaptiveTimeZeroPlan(Plan):
     cam: Cam
     delay_line: DelayLine
     mode: Literal["mean", "max"] = "mean"
-    is_running: bool = True    
+    is_running: bool = True
     max_diff: float = 4
     auto_scale: bool = True
     start: float = -5
@@ -50,59 +50,64 @@ class AdaptiveTimeZeroPlan(AsyncPlan):
     shots: int = 100
     min_step: float = 0.05
     plan_shorthand: ClassVar[str] = "AutoZero"
-    is_async: bool = True
     positions: list[float] = attr.Factory(list)
     values: list[float] = attr.Factory(list)
 
     sigStepDone: ClassVar[Signal] = Signal(object)
 
-    async def plan(self):
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self._gen = self.make_step_generator()
+        self.make_step = lambda: next(self._gen)
+
+    def make_step_generator(self):
+        yield
         dl = self.delay_line
-        await self.move_dl(self.start)
+        self.move_dl(self.start)
         cam = self.cam
         start_pos = dl.get_pos() / 1000.0
         self.cam.set_shots(self.shots)
-        cur_signal = await self.read_point()
+        cur_signal = self.read_point()
         self.sigPlanStarted.emit()
         for i in np.arange(self.start, self.stop, self.current_step):
-            await self.move_dl(i)
-            new_signal = await self.read_point()
+            self.move_dl(i)
+            new_signal = self.read_point()
             self.values.append(new_signal)
             self.positions.append(i)
             self.sigStepDone.emit(self.get_data())
             cam.sigReadCompleted.emit()
+            yield
 
         while (new_x := self.check_for_holes()) and self.is_running:
-            await self.check_pos(new_x)
+            self.check_pos(new_x)
+            yield
         self.is_running = False
         self.sigPlanFinished.emit()
 
     def check_for_holes(self):
         x, y = self.get_data()
         xd = np.diff(x)
-        yd = abs(np.diff(y) / np.ptp(y))        
-        i = (np.abs(yd) > self.max_diff) & (xd > self.min_step)        
+        yd = abs(np.diff(y) / np.ptp(y))
+        i = (np.abs(yd) > self.max_diff) & (xd > self.min_step)
         if np.any(i):
             first = np.argmax(i)
             return (x[first + 1] + x[first]) / 2
         else:
             return False
 
-    async def read_point(self):
-        loop = asyncio.get_running_loop()
-        reading = await loop.run_in_executor(None, self.cam.read_cam)
+    def read_point(self):
+        reading = self.cam.read_cam()
         return np.mean(reading.signals[2])
 
-    async def check_pos(self, pos):
-        await self.move_dl(pos)
-        new_signal = await self.read_point()
+    def check_pos(self, pos):
+        self.move_dl(pos)
+        new_signal = self.read_point()
         self.values.append(new_signal)
         self.positions.append(pos)
         self.sigStepDone.emit(self.get_data())
 
-    async def move_dl(self, pos):
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self.delay_line.set_pos, 1000 * pos, True)
+    def move_dl(self, pos):
+        self.delay_line.set_pos(1000 * pos, True)
 
     def get_data(self):
         x, y = self.positions, self.values
