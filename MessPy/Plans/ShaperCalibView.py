@@ -1,4 +1,5 @@
 from pyqtgraph import PlotWidget
+
 from PySide6.QtWidgets import (
     QWidget,
     QApplication,
