@@ -29,6 +29,7 @@ class FastGVDScan(Plan):
     tod: float = 0
     fod: float = 0
     repeats: int = 20
+    iter: int = 0
     observed_channel: T.Optional[int] = None
     settings_before: dict = attr.Factory(dict)
 
@@ -49,7 +50,8 @@ class FastGVDScan(Plan):
         self.signal = np.zeros((n_disp, n_pix)).T
         self.signal2 = np.zeros((n_disp, n_pix)).T
         self.settings_before["shots"] = self.cam.shots
-        for p in ["gvd", "tod", "fod", "do_dispersion_compensation"]:
+
+        for p in ["gvd", "tod", "fod", "do_dispersion_compensation", "chopped"]:
             self.settings_before[p] = getattr(self.aom, p)
             
         gen = self.make_step_gen()
@@ -126,7 +128,7 @@ class FastGVDScan(Plan):
 
     def restore_state(self):
         self.cam.set_shots(self.settings_before["shots"])
-        for p in ["gvd", "tod", "fod", "do_dispersion_compensation"]:
+        for p in ["gvd", "tod", "fod", "do_dispersion_compensation", "chopped"]:
             setattr(self.aom, p, self.settings_before[p])
         self.aom.update_dispersion_compensation()
         self.aom.reset_masks()

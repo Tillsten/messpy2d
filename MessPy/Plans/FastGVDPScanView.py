@@ -1,6 +1,6 @@
 import numpy as np
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
 from PySide6.QtCore import Slot
 from qtawesome import icon
 
@@ -49,9 +49,10 @@ class FastGVDScanView(QWidget):
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,
         )
-
+        self.stop_scan_but = QPushButton("Stop")
+        self.stop_scan_but.clicked.connect(self.plan.stop_plan)
         self.info_label = QLabel("Info")
-        self.setLayout(vlay(self.gvd_sig, self.gvd_amp, self.info_label))
+        self.setLayout(vlay(self.gvd_sig, self.gvd_amp, self.stop_scan_but, self.info_label))
         self.plan.sigPlanFinished.connect(self.analyze_lines)
         self.gvd_sig.plotItem.setLabels(left="Signal", bottom=gvd_plan.scan_mode)
         self.gvd_amp.plotItem.setLabels(left="Probe2 Mean", bottom=gvd_plan.scan_mode)
@@ -74,7 +75,7 @@ class FastGVDScanView(QWidget):
         y3_maxpos = x[np.argmax(y3)]
 
         txt = f"Min Probe2: {y1_minpos:.2f}\nMax Signal1: {y2_maxpos:.2f}\nMax Signal2: {y3_maxpos:.2f}"
-
+        self.info_label.setText(txt)
         # Try gaussfit with offset
         return
         fit2 = gaussfit(x, y1)

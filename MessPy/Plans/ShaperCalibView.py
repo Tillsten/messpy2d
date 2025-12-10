@@ -56,6 +56,10 @@ class CalibScanView(QWidget):
             param.restoreState(
                 config.exp_settings[s], addChildren=False, removeChildren=False
             )
+            param.setReadonly(False)
+            for p in param:
+                p.setReadonly(False)
+
 
         self.params: Parameter = param
         pt = ParameterTree()

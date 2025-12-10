@@ -13,7 +13,8 @@ dispersion_params = [
     dict(name="gvd", type="float", value=0),
     dict(name="tod", type="float", value=0),
     dict(name="fod", type="float", value=0),
-    dict(name="center", type="float", value=2000),
+    dict(name="center", type="float", value=2000, decimals=5),
+    dict(name="Phase Sign", type="float", value=1.0),
 ]
 
 
@@ -22,8 +23,8 @@ class ShaperControl(QtWidgets.QWidget):
     rs1: RotationStage = attr.ib()
     rs2: RotationStage = attr.ib()
     aom: AOM = attr.ib()
-    folding_mirror_1 : RotationStage|None = attr.ib()
-    folding_mirror_2 : RotationStage|None = attr.ib()
+    folding_mirror_1: RotationStage | None = attr.ib()
+    folding_mirror_2: RotationStage | None = attr.ib()
 
     def __attrs_post_init__(self):
         super(ShaperControl, self).__init__()
@@ -37,7 +38,7 @@ class ShaperControl(QtWidgets.QWidget):
             names += ["FM 1", "FM2 2"]
         rot_controls = []
         for name, rs in zip(names, rot_stages):
-            f = rs.move_relative    
+            f = rs.move_relative
             c1 = ControlFactory(
                 name,
                 apply_fn=rs.set_degrees,
@@ -119,16 +120,20 @@ class ShaperControl(QtWidgets.QWidget):
         self.pt.addParameters(self.chop_params)
 
         self.setLayout(
-            vlay(
-                *rot_controls,                
-                hlay(slider_lbl, self.slider),
-                calib_label,
-                self.chopped,
-                self.pc,
-                self.pt,
-                self.sc,
-                self.sc2,
-                hlay((self.apply, self.cali)),
+            hlay(
+                vlay("<h2>Motors</h2>", *rot_controls),
+                vlay(
+                    "<h2>AOM</h2>",
+                    "<h3>Power</h3>",
+                    hlay(slider_lbl, self.slider),
+                    "<h3>Calib Values</h3>",
+                    calib_label,
+                    self.chopped,
+                    self.pc,
+                    self.pt,
+                    hlay(self.sc, self.sc2),
+                    hlay((self.apply, self.cali)),
+                )
             )
         )
 
@@ -137,6 +142,7 @@ class ShaperControl(QtWidgets.QWidget):
         for i in ["gvd", "tod", "fod"]:
             setattr(self.aom, i, self.disp_param[i] * 1000)
         self.aom.nu0_THz = cm2THz(self.disp_param["center"])
+        self.aom.phase_sign = self.disp_param["Phase Sign"]
         self.aom.update_dispersion_compensation()
 
     @Slot()
