@@ -114,8 +114,12 @@ class FastGVDScan(Plan):
                     sig = 1000 * np.log10(sig)
                 if s == "Probe1":
                     self.probe += mean 
+                    self.cur_mean = mean
+                    self.cur_sig = sig
                     self.signal += sig
                 else:
+                    self.cur_mean2 = mean
+                    self.cur_sig2 = sig
                     self.probe2 += mean
                     self.signal2 += sig
             yield

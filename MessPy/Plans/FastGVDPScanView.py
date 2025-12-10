@@ -34,8 +34,12 @@ class FastGVDScanView(QWidget):
         self.plan = gvd_plan
 
         self.gvd_amp = ObserverPlot(
-            obs=[lambda: self.plan.probe.mean(0)/self.plan.iter, 
-                 lambda: self.plan.probe2.mean(0)/self.plan.iter],
+            obs=[
+                lambda: self.plan.probe.mean(0) / self.plan.iter,
+                lambda: self.plan.probe2.mean(0) / self.plan.iter,
+                (gvd_plan.cur_mean),
+                (gvd_plan.cur_mean2),
+            ],
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,
         )
@@ -43,8 +47,10 @@ class FastGVDScanView(QWidget):
         self.plan.sigPointRead.connect(self.update_label)
         self.gvd_sig = ObserverPlot(
             obs=[
-                lambda: self.plan.signal.max(0)/self.plan.iter,
-                lambda: self.plan.signal2.max(0)/self.plan.iter,
+                lambda: self.plan.signal.max(0) / self.plan.iter,
+                lambda: self.plan.signal2.max(0) / self.plan.iter,
+                (gvd_plan.cur_sig),
+                (gvd_plan.cur_sig2),
             ],
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,
@@ -52,7 +58,9 @@ class FastGVDScanView(QWidget):
         self.stop_scan_but = QPushButton("Stop")
         self.stop_scan_but.clicked.connect(self.plan.stop_plan)
         self.info_label = QLabel("Info")
-        self.setLayout(vlay(self.gvd_sig, self.gvd_amp, self.stop_scan_but, self.info_label))
+        self.setLayout(
+            vlay(self.gvd_sig, self.gvd_amp, self.stop_scan_but, self.info_label)
+        )
         self.plan.sigPlanFinished.connect(self.analyze_lines)
         self.gvd_sig.plotItem.setLabels(left="Signal", bottom=gvd_plan.scan_mode)
         self.gvd_amp.plotItem.setLabels(left="Probe2 Mean", bottom=gvd_plan.scan_mode)

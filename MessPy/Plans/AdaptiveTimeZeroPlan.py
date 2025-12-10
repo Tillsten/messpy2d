@@ -40,7 +40,7 @@ def fit_step_function(t, data) -> ModelResult:
 class AdaptiveTimeZeroPlan(Plan):
     cam: Cam
     delay_line: DelayLine
-    mode: Literal["mean", "max"] = "mean"
+    mode: Literal["nanmean", "nanmax", "ptp"] = "nanmean"
     is_running: bool = True
     max_diff: float = 4
     auto_scale: bool = True
@@ -67,7 +67,7 @@ class AdaptiveTimeZeroPlan(Plan):
         cam = self.cam
         start_pos = dl.get_pos() / 1000.0
         self.cam.set_shots(self.shots)
-        cur_signal = self.read_point()
+
         self.sigPlanStarted.emit()
         for i in np.arange(self.start, self.stop, self.current_step):
             self.move_dl(i)
@@ -97,7 +97,8 @@ class AdaptiveTimeZeroPlan(Plan):
 
     def read_point(self):
         reading = self.cam.read_cam()
-        return np.mean(reading.signals[2])
+        f = getattr(np, self.mode)
+        return f(reading.signals[2])
 
     def check_pos(self, pos):
         self.move_dl(pos)
