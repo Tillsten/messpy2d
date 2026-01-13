@@ -169,8 +169,7 @@ class AOMTwoDPlan(ScanPlan):
                     f[f"2d_data/{line}/{t3_idx}/mean"] = np.mean(specs, 0)
 
     def post_scan(self) -> Generator:
-        thr = threading.Thread(target=self.calculate_scan_means)
-        thr.start()
+        self.calculate_scan_means()
         self.save_meta()
         yield
 
