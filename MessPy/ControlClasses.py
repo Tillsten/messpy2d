@@ -195,7 +195,7 @@ class DelayLine(QObject):
         self.pos = self._dl.get_pos_fs()
         self.sigPosChanged.emit(self.pos)
         if self._dl.is_moving():
-            QTimer.singleShot(30, self.wait_and_update)
+            QTimer.singleShot(80, self.wait_and_update)
         else:
             self.moving = False
 
