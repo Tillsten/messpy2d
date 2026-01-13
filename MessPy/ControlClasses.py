@@ -45,7 +45,7 @@ class Cam(QObject):
 
     sigShotsChanged: T.ClassVar[Signal] = Signal(int)
     sigReadCompleted: T.ClassVar[Signal] = Signal()
-    sigRefCalibrationFinished : T.ClassVar[Signal] = Signal(object, object)
+    sigRefCalibrationFinished: T.ClassVar[Signal] = Signal(object, object)
 
     def __attrs_post_init__(self):
         QObject.__init__(self)
@@ -53,7 +53,7 @@ class Cam(QObject):
         if self.shots > 1000:
             self.set_shots(20)
         self.read_cam()
-        c : I.ICAm =  self.cam
+        c: I.ICAm = self.cam
         self.channels = c.channels
         self.lines = c.lines
         self.sig_lines = c.sig_lines
@@ -91,7 +91,7 @@ class Cam(QObject):
         try:
             shots = int(shots)
             assert shots > 1
-            self.shots = shots            
+            self.shots = shots
             self.cam.set_shots(self.shots)
             config.shots = shots
             self.sigShotsChanged.emit(self.shots)
@@ -195,7 +195,7 @@ class DelayLine(QObject):
         self.pos = self._dl.get_pos_fs()
         self.sigPosChanged.emit(self.pos)
         if self._dl.is_moving():
-            QTimer.singleShot(30, self.wait_and_update)
+            QTimer.singleShot(100, self.wait_and_update)
         else:
             self.moving = False
 
@@ -229,7 +229,7 @@ class Controller(QObject):
     rot_stage: T.Optional[I.IRotationStage] = _rot_stage
     sample_holder: T.Optional[I.ILissajousScanner] = _sh
     shaper: T.Optional[object] = _shaper
-    power_meter: T.Optional[I.IPowerMeter] = _power_meter    
+    power_meter: T.Optional[I.IPowerMeter] = _power_meter
     plan: T.Optional["Plan"] = None
     pause_plan: bool = False
 
@@ -287,10 +287,10 @@ class Controller(QObject):
                 self.standard_read()
                 # logger.info(f"Standard read took {(time.time()-t0)*1000} ms")
             time.sleep(0.02)
-            
+
         elif hasattr(self.plan, "make_step"):
             try:
-                print('make_step')
+                print("make_step")
                 self.plan.make_step()
                 time.sleep(0.02)
             except StopIteration:
@@ -302,6 +302,7 @@ class Controller(QObject):
         else:
             raise ValueError("Plan is wrong")
         self.loop_finished.emit()
+
     @Slot(object)
     def start_plan(self, plan):
         logger.info(f"Starting plan: {plan.plan_shorthand}:{plan.name}")
