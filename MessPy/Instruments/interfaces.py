@@ -1,5 +1,4 @@
 import abc
-import asyncio
 import atexit
 import contextlib
 import json
@@ -266,8 +265,8 @@ class IDelayLine(IDevice):
     home_pos: float = 0
     pos_sign: float = 1
     beam_passes: int = 2
-    max_pos: float = np.inf
-    min_pos: float = -np.inf
+    max_pos_mm: float = np.inf
+    min_pos_mm: float = -np.inf
 
     interface_type: T.ClassVar[str] = "DelayLine"
 
@@ -290,10 +289,10 @@ class IDelayLine(IDevice):
     def move_fs(self, fs, do_wait=False, *args, **kwargs):
         mm = self.pos_sign * fs_to_mm(fs)
         new_pos = mm / self.beam_passes + self.home_pos
-        if not self.min_pos <= new_pos <= self.max_pos:
+        if not self.min_pos_mm <= new_pos <= self.max_pos_mm:
             raise ValueError(
                 f"New position {new_pos} is outside of the allowed range "
-                f"[{self.min_pos}, {self.max_pos}]"
+                f"[{self.min_pos_mm}, {self.max_pos_mm}]"
             )
         self.move_mm(new_pos, *args, **kwargs)
         if do_wait:
@@ -307,13 +306,6 @@ class IDelayLine(IDevice):
     def def_home(self):
         self.home_pos = self.get_pos_mm()
         self.save_state()
-
-    async def async_move_mm(self, mm, do_wait=False):
-        self.move_mm(mm)
-        if do_wait:
-            while self.is_moving():
-                self.pos = self.get_pos_mm()
-                await asyncio.sleep(0.1)
 
 
 @attr.s(auto_attribs=True)
@@ -376,12 +368,6 @@ class IRotationStage(IDevice):
 
     def move_relative(self, x):
         self.set_degrees(x + self.get_degrees())
-
-    async def async_set_degrees(self, deg: float, do_wait=False):
-        self.set_degrees(deg)
-        while self.is_moving():
-            self.sigDegreesChanged.emit(deg)
-            await asyncio.sleep(0.3)
 
 
 @attr.s(auto_attribs=True)

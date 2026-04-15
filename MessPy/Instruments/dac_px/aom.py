@@ -50,6 +50,7 @@ class AOM(IDevice):
     total_phase: Optional[np.ndarray] = np.zeros(PIXEL)
     mask: np.ndarray = np.zeros_like(PIXEL)
     is_running: bool = False
+    phase_sign: float = 1
 
     chopped: bool = True
     chop_mode: Literal["standard", "window"] = "standard"
@@ -81,6 +82,7 @@ class AOM(IDevice):
             "wave_amp": self.wave_amp,
             "chopped": self.chopped,
             "do_dispersion_compensation": self.do_dispersion_compensation,
+            "phase_sign": self.phase_sign,
             "phase_cycle": self.phase_cycle,
             "mode": self.mode,
             "nu0_THz": self.nu0_THz,
@@ -94,7 +96,9 @@ class AOM(IDevice):
         if self.calib:
             self.set_calib(self.calib)
             self.update_dispersion_compensation()
-        self.set_wave_amp(self.wave_amp)
+            self.set_wave_amp(self.wave_amp)
+        else: 
+            self.load_full_mask()
 
     def setup_dac(self):
         self.lock.lock()
@@ -133,7 +137,7 @@ class AOM(IDevice):
         coef = np.asarray(coefs) 
         coef = coef / np.array([1, 2, 6, 24])
         phase = x * coef[0] + x**2 * coef[1] + x**3 * coef[2] + x**4 * coef[3]
-        return phase[:, None]
+        return phase
 
     def update_dispersion_compensation(self):
         """
@@ -148,12 +152,8 @@ class AOM(IDevice):
         self.do_dispersion_compensation = True
         self.compensation_phase = -phase[:, None]
         logger.info(
-            "Updating dispersion compensation %1.f %.2f %.2e %.2e %.2e",
-            self.nu0_THz,
-            self.delay,
-            self.gvd,
-            self.tod,
-            self.fod,
+            "Updating dispersion compensation %1.f %.2f %.2e %.2e %.2e"
+            % (self.nu0_THz, self.delay, self.gvd, self.tod, self.fod)
         )
         self.sigDispersionChanged.emit((self.gvd, self.tod, self.fod))
         self.generate_waveform()
@@ -171,6 +171,10 @@ class AOM(IDevice):
     def bragg_wf(self, amp, phase):
         """Calculates a Bragg-correct AOM waveform for given phase and shape"""
         assert self.calib is not None
+       
+        if phase.ndim == 1:
+            phase = phase[:, None]
+        assert phase.shape[0] == PIXEL
         F = np.poly1d(np.polyint(self.calib))
         phase_term = (
             2
@@ -180,13 +184,14 @@ class AOM(IDevice):
             * self.rf_freq_MHz
             / self.dac_freq_MHz
         )
-        phase_term = phase + phase_term[:, None]
-        return amp * np.cos(phase_term)
+        print(self.phase_sign)
+        phase_term = self.phase_sign*phase + phase_term[:, None]
+        return amp * np.cos(-phase_term)
 
     def classic_wf(self, amp, phase):
         """Calculates a uncorrected AOM waveform for given amplitude and shape"""
         f = self.dac_freq_MHz / self.rf_freq_MHz
-        return amp * np.cos(self.pixel[:, None] / f * 2 * np.pi + phase)
+        return amp * np.cos(self.pixel[:, None] / f * 2 * np.pi + self.phase_sign*phase)
 
     def double_pulse(
         self,
@@ -241,6 +246,11 @@ class AOM(IDevice):
             if len(amp.shape) == 1:
                 amp = amp[:, None]
             self.amp = amp
+
+    def reset_masks(self) -> None:
+        self.set_amp_and_phase(amp=np.ones((PIXEL, 1)), 
+                               phase=np.zeros((PIXEL, 1)))
+        self.generate_waveform()
 
     def generate_waveform(self) -> int:
         """
@@ -318,8 +328,6 @@ class AOM(IDevice):
 
         mask = (self.amp_fac * MAX_16_Bit * self.mask).astype("int16")
         self.scaled_mask = mask
-        assert mask.dtype == np.int16
-        assert (mask.size % PIXEL) == 0
         frames = mask.size // PIXEL
         self.end_playback()
         mask1 = np.zeros_like(mask)
@@ -329,6 +337,7 @@ class AOM(IDevice):
         full_mask[1::2] = mask1
         self.full_mask = full_mask
         self.lock.lock()
+        self.end_playback()
         self.dac.LoadRamBufXD48(0, full_mask.size * 2, full_mask.ctypes.data, 0)
         self.start_playback()
         self.lock.unlock()

@@ -6,6 +6,22 @@ This project is an experimental control for ultrafast spectroscopy. While it's
 primarily designed for our specific use case, some of the device interfaces may
 be useful for others.
 
+![MessPy Screenshot](messpy_screenshot.png)
+
+The software uses pixi as an enviroment manager, which allows for easy
+installation and distribution. To get started install [pixi](https://pixi.sh)
+and run the following commands in the repository folder:
+
+```bash
+pixi install
+pixi run start
+```
+
+Pixi should automatically install all dependencies. However, for some hardware
+specific drivers may be necessary. Please refer to the documentation of the
+specific hardware for more information.
+
+
 ## Supported Hardware
 
 ### Detectors

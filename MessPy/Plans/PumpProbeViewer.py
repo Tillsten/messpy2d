@@ -297,6 +297,7 @@ class PumpProbeStarter(PlanStartDialog):
             {
                 "name": "Shots",
                 "type": "int",
+                "min": 10,
                 "max": 4000,
                 "decimals": 5,
                 "step": 500,
@@ -366,12 +367,16 @@ class PumpProbeStarter(PlanStartDialog):
             if c.cam.spectrograph:
                 name = c.name
                 l = p[f"{name} center wls"].split(",")
-                cam_cwls = []
-                for s in l:
-                    if s[-1] == "c":
-                        cam_cwls.append(1e7 / float(s[:-1]))
-                    else:
-                        cam_cwls.append(float(s))
+                try:
+                    assert len(l) > 0                    
+                    cam_cwls = []
+                    for s in l:
+                        if s[-1] == "c":
+                            cam_cwls.append(1e7 / float(s[:-1]))
+                        else:
+                            cam_cwls.append(float(s))
+                except:
+                    raise ValueError("Parsing of cennter wls failed")
                 cwls.append(cam_cwls)
             else:
                 cwls.append([0.0])

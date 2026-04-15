@@ -22,7 +22,7 @@ import numpy as np
 from attr import attrib, attrs
 from PySide6.QtCore import Signal
 
-from MessPy.ControlClasses import Controller
+from MessPy.ControlClasses import Controller, config
 from MessPy.Instruments.dac_px import AOM
 from MessPy.Instruments.signal_processing import THz2cm, cm2THz
 
@@ -100,8 +100,16 @@ class AOMTwoDPlan(ScanPlan):
             f["t1"].attrs["rot_frame"] = self.rot_frame_freq
             f["wn"] = self.controller.cam.wavenumbers
             f["wl"] = self.controller.cam.wavelengths
+
             grp = f.create_group("meta")
             grp.attrs["meta"] = json.dumps(self.meta)
+
+            if config.last_results.get("ShaperCalib") is not None:
+                calib = config.last_results["ShaperCalib"]
+                f.create_dataset("ShaperCalib/x", data=calib["x"])
+                f.create_dataset("ShaperCalib/y_train", data=calib["y_train"])
+                f.create_dataset("ShaperCalib/y_single", data=calib["y_single"])
+                f.create_dataset("ShaperCalib/y_full", data=calib["y_full"])
             # flat_dict(self.meta, grp)
         return name
 
@@ -140,7 +148,7 @@ class AOMTwoDPlan(ScanPlan):
         )
         yield
 
-    def calculate_scan_means(self):        
+    def calculate_scan_means(self):
         with h5py.File(self.data_file_name, mode="a", track_order=True) as f:
             f: h5py.File
             for line in f["ifr_data"]:  # type: ignore
@@ -215,7 +223,7 @@ class AOMTwoDPlan(ScanPlan):
                             **data_ops,
                             chunks=chunks,
                         )
-                        ds.attrs['creation date'] = cur_date 
+                        ds.attrs["creation date"] = cur_date
                         ds.attrs["time"] = self.cur_t2
                 else:
                     ds = f.create_dataset(
@@ -224,14 +232,14 @@ class AOMTwoDPlan(ScanPlan):
                         dtype="float32",
                     )
                     ds.attrs["time"] = self.cur_t2
-                    ds.attrs['creation date'] = cur_date 
+                    ds.attrs["creation date"] = cur_date
                     ds = f.create_dataset(
                         f"2d_data/{line}/{t2_idx}/{cur_scan}",
                         data=data.signal_2D,
                         dtype="float32",
                     )
                     ds.attrs["time"] = self.cur_t2
-                    ds.attrs['creation date'] = cur_date 
+                    ds.attrs["creation date"] = cur_date
                     if self.save_frames_enabled:
                         chunks = (1, data.frames.shape[1])
                         ds = f.create_dataset(
@@ -240,7 +248,7 @@ class AOMTwoDPlan(ScanPlan):
                             **data_ops,
                             chunks=chunks,
                         )
-                        ds.attrs['creation date'] = cur_date 
+                        ds.attrs["creation date"] = cur_date
                     disp_2d = f.get(f"2d_data/{line}/{t2_idx}/mean", data.signal_2D)
                     disp_ifr = f.get(
                         f"ifr_data/{line}/{t2_idx}/mean", data.interferogram

@@ -13,6 +13,7 @@ class Config:
     conf_path: str = p
     data_directory: Path = Path("C:") / "results"
     testing = False
+    last_results: dict = attr.Factory(dict)
 
     def save(self, fname=p):
         with open(fname, "wb") as f:
@@ -32,7 +33,7 @@ if config_available:
         f = attr.asdict(Config.load(p))
         for key, val in f.items():
             setattr(config, key, val)
-    except (EOFError, IOError):
+    except (EOFError, IOError, AttributeError):
         pass
 
 

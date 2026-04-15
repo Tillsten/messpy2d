@@ -147,8 +147,13 @@ class MainWindow(QMainWindow):
             plans.append(("Signal Image", "fa5s.image", SignalImageStarter))
 
         if self.controller.shaper is not None:
+            plans += [("Fast GVD Scan", "ei.car", FastGVDScanStarter)]
             plans += [("GVD Scan", "fa5s.stopwatch", GVDScanStarter)]
             plans += [("2D Measurement", "ei.graph", AOMTwoDStarter)]
+
+            if self.controller.shaper.fm1 is not None:
+                plans += [("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)]
+       
 
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
@@ -488,13 +493,15 @@ class DelayLineControl(QGroupBox):
 
 def start_app():
     import sys
-    import qasync
-
-    import asyncio as aio
     import traceback
-    from pyqtgraph import mkQApp
 
+    from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
+    GroupParameter.value = lambda self: self.opts.get('value', None)
+    from pyqtgraph import mkQApp, setConfigOption
+
+    setConfigOption("antialias", True)
     app = mkQApp()
+
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")
@@ -522,10 +529,4 @@ def start_app():
 
     mw = MainWindow(Controller())
     mw.showMaximized()
-    loop = qasync.QEventLoop(app)
-    aio.set_event_loop(loop)
-    app_close_event = aio.Event()
-    app.aboutToQuit.connect(app_close_event.set)
-    with loop:
-        loop.run_until_complete(app_close_event.wait())
-    # app.exec()
+    app.exec()

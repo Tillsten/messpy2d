@@ -1,6 +1,7 @@
 import numpy as np
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
+from PySide6.QtCore import Slot
 from qtawesome import icon
 
 from MessPy.ControlClasses import Controller
@@ -33,29 +34,40 @@ class FastGVDScanView(QWidget):
         self.plan = gvd_plan
 
         self.gvd_amp = ObserverPlot(
-            obs=[lambda: self.plan.probe2.mean(1), lambda: self.plan.probe.mean(1)],
-            signal=gvd_plan.sigPointRead,
-            x=gvd_plan.gvd_list,
-        )
-
-        self.gvd_sig = ObserverPlot(
             obs=[
-                lambda: self.plan.signal[:, :, 0].mean(1),
-                lambda: self.plan.signal[:, :, 2].mean(1),
+                lambda: self.plan.probe.mean(0) / self.plan.iter,
+                lambda: self.plan.probe2.mean(0) / self.plan.iter,
+                (gvd_plan.cur_mean),
+                (gvd_plan.cur_mean2),
             ],
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,
         )
 
-        self.info_label = QLabel("Info")
-        self.setLayout(vlay(self.gvd_sig, self.gvd_amp, self.info_label))
         self.plan.sigPointRead.connect(self.update_label)
+        self.gvd_sig = ObserverPlot(
+            obs=[
+                lambda: self.plan.signal.max(0) / self.plan.iter,
+                lambda: self.plan.signal2.max(0) / self.plan.iter,
+                (gvd_plan.cur_sig),
+                (gvd_plan.cur_sig2),
+            ],
+            signal=gvd_plan.sigPointRead,
+            x=gvd_plan.gvd_list,
+        )
+        self.stop_scan_but = QPushButton("Stop")
+        self.stop_scan_but.clicked.connect(self.plan.stop_plan)
+        self.info_label = QLabel("Info")
+        self.setLayout(
+            vlay(self.gvd_sig, self.gvd_amp, self.stop_scan_but, self.info_label)
+        )
         self.plan.sigPlanFinished.connect(self.analyze_lines)
         self.gvd_sig.plotItem.setLabels(left="Signal", bottom=gvd_plan.scan_mode)
         self.gvd_amp.plotItem.setLabels(left="Probe2 Mean", bottom=gvd_plan.scan_mode)
         self.setWindowTitle("GVD Scan")
         self.setWindowIcon(icon("fa5s.tired"))
 
+    @Slot()
     def update_label(self):
         p = self.plan
         s = f"Point {p.gvd_idx}/ {len(p.gvd_list)}"
@@ -63,16 +75,17 @@ class FastGVDScanView(QWidget):
 
     def analyze_lines(self):
         x = self.plan.gvd_list
-        y1 = self.plan.probe2.mean(1)
-        y2 = self.plan.signal[:, :, 0].mean(1)
-        y3 = self.plan.signal[:, :, 2].mean(1)
+        y1 = self.plan.probe2.mean(0)
+        y2 = self.plan.signal.mean(0)
+        y3 = self.plan.signal2.mean(0)
         y1_minpos = x[np.argmin(y1)]
         y2_maxpos = x[np.argmax(y2)]
         y3_maxpos = x[np.argmax(y3)]
 
         txt = f"Min Probe2: {y1_minpos:.2f}\nMax Signal1: {y2_maxpos:.2f}\nMax Signal2: {y3_maxpos:.2f}"
-
+        self.info_label.setText(txt)
         # Try gaussfit with offset
+        return
         fit2 = gaussfit(x, y1)
         if fit2.success:
             self.gvd_sig.plot(x, fit2.best_fit, pen="g")
@@ -92,8 +105,8 @@ class FastGVDScanStarter(PlanStartDialog):
 
     def setup_paras(self):
         tmp = [
-            {"name": "Filename", "type": "str", "value": "temp_gvd"},
-            {"name": "Reps", "type": "int", "max": 2000, "value": 20},
+            {"name": "Filename", "type": "str", "value": "temp_fastgvd"},
+            {"name": "Reps", "type": "int", "max": 2000, "value": 5},
             {"name": "Start Val", "type": "float", "value": -300, "step": 1},
             {"name": "End Val", "type": "float", "value": -100, "step": 1},
             {"name": "Step", "type": "float", "value": 1, "step": 0.1},

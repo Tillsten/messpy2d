@@ -7,6 +7,8 @@ from itertools import cycle
 
 import pyqtgraph as pg
 import pyqtgraph.parametertree as pt
+from pyqtgraph.parametertree import Parameter
+
 from pyqtgraph import PlotItem
 from PySide6.QtCore import Qt, Slot, QTimer, QObject, QSettings
 from PySide6.QtGui import QPalette, QColor, QIcon
@@ -281,15 +283,23 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         self.recent_settings_list = QListWidget()
         self.recent_settings_list.currentRowChanged.connect(self.load_recent)
 
-        start_button = QPushButton("Start Plan")
-        start_button.clicked.connect(self.accept)
+        self.start_button = QPushButton("Start Plan")
+        self.start_button.clicked.connect(self.accept)
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self.reject)
+        self.plan_valid_lbl = QLabel()
+        self.plan_valid_lbl.setText("Plan valid")
 
         self.setLayout(
             hlay(
                 [
-                    vlay([self.treeview, hlay([start_button, cancel_button])]),
+                    vlay(
+                        [
+                            self.treeview,
+                            self.plan_valid_lbl,
+                            hlay([self.start_button, cancel_button]),
+                        ]
+                    ),
                     vlay([QLabel("Recent Settings"), self.recent_settings_list]),
                 ]
             )
@@ -298,6 +308,7 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         self.setup_paras()
         self.setup_recent_list()
         self.treeview.setParameters(self.paras)
+        self.paras.sigTreeStateChanged.connect(self.check_if_valid)
         self.treeview.setPalette(self.style().standardPalette())
         self.treeview.setStyle(QStyleFactory.create("Fusion"))
         self.treeview.setStyleSheet("")
@@ -348,6 +359,18 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
         settings = self.recent_settings[new][1].copy()
         settings.pop("date")
         self.paras.restoreState(settings, removeChildren=False, addChildren=False)
+        self.check_if_valid()
+
+    def check_if_valid(self):
+        try:
+            self.create_plan(self.controller)
+            self.plan_valid_lbl.setText("<h2>Plan valid</h2>")
+            self.start_button.setEnabled(True)
+            return True
+        except Exception as e:
+            self.plan_valid_lbl.setText("<h2 color=r>Plan invalid: " + str(e) + "</h2>")
+            self.start_button.setEnabled(False)
+            return False
 
     @classmethod
     def start_plan(cls, controller, parent=None):
@@ -467,7 +490,9 @@ class ObserverPlot(pg.PlotWidget):
 
 
 class ObserverPlotWithControls(QWidget):
-    def __init__(self, names, obs, signal, plot_name: str, x=None, parent=None, **kwargs):
+    def __init__(
+        self, names, obs, signal, plot_name: str, x=None, parent=None, **kwargs
+    ):
         super(ObserverPlotWithControls, self).__init__()
         self.obs_plot = ObserverPlot(obs, signal, x, parent)
         line_controls = QWidget()
@@ -483,9 +508,12 @@ class ObserverPlotWithControls(QWidget):
             cb = QCheckBox()
             checked = settings.value(f"{plot_name}/{n}", True, type=bool)
             cb.setChecked(checked)
+            line.setVisible(checked)
             form_layout.addRow(lb, cb)
             cb.toggled.connect(line.setVisible)
-            cb.toggled.connect(lambda _, n=n: QSettings().setValue(f"{plot_name}/{n}", _))
+            cb.toggled.connect(
+                lambda _, n=n: QSettings().setValue(f"{plot_name}/{n}", _)
+            )
 
         self.line_controls = line_controls
         self.setLayout(QHBoxLayout())
@@ -589,8 +617,19 @@ def remove_nodes(a):
     return a
 
 
-def make_entry(paras):
-    plan_settings = remove_nodes(paras.getValues())
+
+
+def getValuesGroupFriendly(para: Parameter):
+    vals = {}
+    for ch in para:        
+        if ch.hasValue():
+            vals[ch.name()] = (ch.value(), getValuesGroupFriendly(ch))
+        else:
+            vals[ch.name()] = (None, getValuesGroupFriendly(ch))
+    return vals
+
+def make_entry(paras: Parameter):
+    plan_settings = remove_nodes(getValuesGroupFriendly(paras))
     return {"Plan Settings": plan_settings}
 
 
@@ -611,6 +650,7 @@ def float_param(
         limits=(min_val, max_val),
         **kwargs,
     )
+
 
 def int_params(
     name: str,

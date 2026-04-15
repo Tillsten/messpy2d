@@ -96,20 +96,24 @@ class ScanSpectrumStarter(PlanStartDialog):
             WavelengthParameter(name="Min."),
             WavelengthParameter(name="Max."),
             {"name": "Resolution", "type": "float", "min": 1.0, "value": 100.0},
-            {"name": "Linear Axis", "type": "list", "limits": ["cm-1", "nm"]},
+            {"name": "Linear Axis", "type": "list", "limits": ["cm-1", "nm"], "value": "cm-1"},
             {"name": "timeout", "type": "float", "value": 3},
         ]
 
         self.candidate_cams = {
             c.cam.name: c for c in self.controller.cam_list if c.changeable_wavelength
         }
-        tmp.append(dict(name="Cam", type="list", limits=self.candidate_cams.keys()))
+        cams = list(self.candidate_cams.keys())
+        tmp.append(dict(name="Cam", type="list", limits=cams, value=cams[0]))
         p = pt.Parameter(name="Exp. Settings", type="group", children=tmp)
-        params = [sample_parameters, p]
+        sp = pt.Parameter(**sample_parameters)
+        params = [sp, p]
+
         self.paras = pt.Parameter.create(
             name="Scan Spectrum", type="group", children=params
         )
-        self.paras.getValues()
+        
+
         self.save_defaults()
 
     def create_plan(self, controller: Controller):

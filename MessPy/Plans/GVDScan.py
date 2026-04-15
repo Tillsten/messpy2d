@@ -61,15 +61,8 @@ class GVDScan(Plan):
             # d = {self.scan_mode: value}
             setattr(self.aom, self.scan_mode.lower(), value * 1000)
             self.aom.update_dispersion_compensation()
-            t = threading.Thread(target=time.sleep, args=(self.waiting_time,))
-            t.start()
-            while t.is_alive():
-                yield
-            t = threading.Thread(target=self.cam.read_cam)
-            t.start()
-            while t.is_alive():
-                yield
-
+            time.sleep(self.waiting_time)
+            self.cam.read_cam()
             assert self.cam.last_read is not None
             probe = self.cam.last_read.lines[0, :]
             probe2 = self.cam.last_read.lines[1, :]

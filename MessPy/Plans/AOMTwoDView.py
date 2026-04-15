@@ -174,7 +174,7 @@ class AOMTwoDViewer(QWidget):
 
     @Slot()
     def update_spec_lines(self, *args):
-        idx = np.argmin(abs(self.pump_freqs - self.spec_line.pos()[1]))
+        idx = np.argmin(abs(self.pump_freqs - self.spec_line.pos().y()))
         if self.plan.last_2d is not None:
             self.spec_cut_line.setData(
                 self.probe_freq, self.plan.last_2d[self.pr_idx][:, idx]

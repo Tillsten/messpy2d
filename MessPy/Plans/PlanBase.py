@@ -1,13 +1,12 @@
-import asyncio
+
 from functools import cached_property
 import json
 import time
-import threading
-from asyncio import Task
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import ClassVar, Tuple, Optional, Callable, Generator, Any
 
+from loguru import logger
 import h5py
 import attr
 from PySide6.QtCore import QObject, Signal, Slot, QThread
@@ -22,11 +21,12 @@ sample_parameters = {
     "children": [
         dict(name="Sample", type="str", value=""),
         dict(name="Solvent", type="str", value=""),
-        dict(name="Excitation", type="str"),
-        dict(name="Thickness", type="str"),
-        dict(name="Annotations", type="str"),
-        dict(name="Users:", type="str"),
+        dict(name="Excitation", type="str", value=""),
+        dict(name="Thickness", type="str", value=""),
+        dict(name="Annotations", type="str", value=""),
+        dict(name="Users:", type="str", value=""),
     ],
+    
 }
 
 
@@ -98,7 +98,6 @@ class Plan(QObject):
     meta: dict = attr.Factory(dict)
     status: str = ""
     creation_dt: datetime = attr.Factory(datetime.now)
-    is_async: bool = False
     time_tracker: TimeTracker = attr.Factory(TimeTracker)
     file_name: Tuple[Path, Path] | None = None
 
@@ -108,13 +107,14 @@ class Plan(QObject):
 
     def __attrs_post_init__(self):
         super(Plan, self).__init__()
+        self.sigPlanFinished.connect(self.restore_state)
         self.get_file_name()  # check if name is valid
 
     def get_file_name(self) -> Tuple[Path, Path]:
         """Builds the filename and the metafilename"""
         if self.file_name is not None:
             return self.file_name
-        if ':;<>"|?*\\/' in self.name:
+        if any(c in self.name for c in r':;<>"|?*\/'):
             raise ValueError("Plan name contains invalid characters")
         date_str = self.creation_dt.strftime("%y-%m-%d %H_%M")
         name = f"{date_str} {self.plan_shorthand} {self.name}"
@@ -123,6 +123,7 @@ class Plan(QObject):
             raise IOError("Data path in config not existing")
         if (p / name).with_suffix(".json").exists():
             name = name + "_0"
+        logger.info(f"Generated the filepath {str(p / name)}")
         return (p / name).with_suffix(".h5"), (p / name).with_suffix(".json")
 
     @property
@@ -132,6 +133,12 @@ class Plan(QObject):
     @property
     def meta_file(self) -> Path:
         return self.get_file_name()[1]
+
+    def make_step_generator(self) -> Generator:
+        """Generator that yields steps of the plan.
+
+        Should be overridden by subclasses."""
+        raise NotImplementedError
 
     def save_meta(self):
         """Saves the metadata in the metafile"""
@@ -257,22 +264,3 @@ class PointScan(ScanPlan):
         raise NotImplementedError
 
 
-@attr.s(auto_attribs=True, kw_only=True)
-class AsyncPlan(Plan):
-    is_async: bool = True
-    task: Task = attr.ib(init=False)
-
-    sigTaskCreated: ClassVar[Signal] = Signal()
-
-    async def plan(self):
-        raise NotImplementedError
-
-    def __attrs_post_init__(self):
-        super(AsyncPlan, self).__attrs_post_init__()
-        loop = asyncio.get_event_loop()
-        self.task = loop.create_task(self.plan(), name=self.name)
-
-    def stop_plan(self):
-        if self.task:
-            self.task.cancel()
-        return super().stop_plan()

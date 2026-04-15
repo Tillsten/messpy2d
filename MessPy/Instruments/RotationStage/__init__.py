@@ -20,6 +20,9 @@ from PySide6.QtCore import QObject, Signal, QTimer
 import serial
 import attr
 import time
+from threading import Lock
+
+from loguru import logger
 
 try:
     rs.s.close()
@@ -34,21 +37,15 @@ controller_states = {
     "0D": "NON REFERENCED from DISABLE",
     "0E": "NOT REFERENCED from READY",
     "0F": "NOT REFERENCED from MOVING",
-    "10": "NOT REFERENCED ESP stage error",
-    "11": "NOT REFERENCED from JOGGING",
+    "10": "NOT REFERENCED no parameters.",
     "14": "CONFIGURATION",
-    "1E": "HOMING command from RS-232-C",
-    "1F": "HOMING command by SMC-RC",
+    "1E": "HOMING",
     "28": "MOVING",
     "32": "READY from HOMING",
     "33": "READY from MOVING",
     "34": "READY from DISABLE",
-    "35": "READY from JOGGING",
     "3C": "DISABLE from READY",
     "3D": "DISABLE from MOVING",
-    "3E": "DISABLE from JOGGING",
-    "46": "JOGGING from READY",
-    "47": "JOGGING from DISABLE",
 }
 
 
@@ -64,6 +61,7 @@ class RotationStage(IRotationStage):
     comport: str = "COM11"
     offset: float = 180
     last_pos: float = 0
+    lock: Lock = attr.Factory(Lock)
     signals: RotSignals = attr.Factory(RotSignals)
 
     @cached_property
@@ -72,32 +70,45 @@ class RotationStage(IRotationStage):
 
     def __attrs_post_init__(self):
         super(RotationStage, self).__attrs_post_init__()
+        logger.info("Connecting %s"%(self.name))
         state = self.controller_state()        
+        logger.info(f"Starting state: {state}")
         if state.startswith("DISABLE"):
+            logger.info(f"Enable")
             self.w("1MM1")
             
         elif state.startswith("NOT REFERENCED"):
-            self.w(b"1RS")
-            self.rot.write(b"1OR\r\n")
-            while self.controller_state().startswith("HOMING"):
+            #self.w(b"1RS")
+            self.w("1OR")
+            time.sleep(0.3)
+            logger.info("Start Homing")
+            
+            while True:
+                state = self.controller_state()
+                print(state)                
                 time.sleep(0.3)
-
-        if self.last_pos != 0:
-            self.set_degrees(self.last_pos)
+                if state.startswith('READY'):
+                    break
+            logger.info("Homing finnished")
+        logger.info(f"State after init: {self.controller_state()}, Postion: {self.get_degrees()}")
+        #if self.last_pos != 0:
+        #    self.set_degrees(self.last_pos)
 
     def w(self, x):
+        assert x is not bytes
+
         writer_str = f"{x}\r\n"
         self.rot.write(writer_str.encode("utf-8"))
-        self.rot.timeout = 1
+        #self.rot.timeout = 1
 
     def set_degrees(self, pos):
         """Set absolute position of the roatation stage"""
         cur_pos = self.get_degrees()
         if isinstance(pos, str):
             pos = float(pos)
-        setter_str = f"1PA{pos+self.offset}\r\n"
-        self.rot.write(setter_str.encode("utf-8"))
-        self.rot.timeout = 3
+        with self.lock:
+            self.w(f"1PA{pos+self.offset}")
+        logger.info(f"Starting Move to {pos}")
         self.last_pos = pos
 
 
@@ -105,28 +116,33 @@ class RotationStage(IRotationStage):
         self._checker = QTimer.singleShot(100, self.check_moving)
         
     def check_moving(self):
-        if self.is_moving():
+        if (moving :=  self.is_moving()):
             self.signals.sigDegreesChanged.emit(self.get_degrees())
-            QTimer.singleShot(100, self.check_moving)
+            QTimer.singleShot(200, self.check_moving)
+
         else:
             self.signals.sigDegreesChanged.emit(self.get_degrees())
             self.signals.sigMovementFinished.emit()
+
 
     def get_state(self) -> dict:
         return dict(last_pos=self.last_pos)
 
     def controller_state(self) -> str:
-        self.w("1MM?")
-        ans = self.rot.read_until(b"\r\n").decode()
+        with self.lock:
+            self.w("1MM?")        
+            ans = self.rot.read_until(b"\r\n").decode()
+        logger.debug("Asked for stateL Got ans %s"%ans)
         state = ans[ans.find("MM") + 2 : -2].upper()
         state = state.replace(" ", "0")
         return controller_states[state]
 
     def get_degrees(self):
         """Returns the position"""
-        self.w("1TP")
-        self.rot.timeout = 0.5
-        ans = self.rot.read_until(b"\r\n")
+        with self.lock:
+            self.w("1TP")        
+            ans = self.rot.read_until(b"\r\n")
+        logger.debug("Asked for pos. Got ans %s"%ans)
         ans = ans.decode()
         return float(ans[ans.find("TP") + 2 : -2]) - self.offset
 
@@ -137,9 +153,9 @@ class RotationStage(IRotationStage):
 if __name__ == "__main__":
     import time
 
-    rs = RotationStage(comport="COM6")
+    rs = RotationStage(comport="COM4")
     print("change first")
-    rs.set_degrees(0)
+    rs.set_degrees(-64)
     time.sleep(8)
     deg = rs.get_degrees()
     print(f"first pol:{deg}")

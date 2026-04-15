@@ -10,7 +10,7 @@ from MessPy.Instruments.interfaces import ISpectrograph
 
 @attr.s(auto_attribs=True)
 class SP2150i(ISpectrograph):
-    comport: str = "COM4"
+    comport: str = "COM8"
     pos_nm: float = 0
     changeable_slit: bool = False
     changeable_wavelength: bool = True
