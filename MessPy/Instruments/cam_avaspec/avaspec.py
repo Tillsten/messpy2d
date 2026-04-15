@@ -191,7 +191,7 @@ class AvantesSpec:
             out = self.ardudino.read(2)
             c, a = out
             #print(c, a)
-            self.chopper[self.count] = c
+            self.chopper[self.count] = a
             self.analog_in[self.count] = a
             self.count += 1
             #print(self.count)
@@ -200,7 +200,7 @@ class AvantesSpec:
                 #out = self.ardudino.read(2*self.shots)
                 #self.chopper[:] = np.frombuffer(out[::2], dtype=np.int8)
                 #self.analog_in[:] = np.frombuffer(out[1::2], dtype=np.int8)
-                print(out)
+                #print(out)
                 self.is_reading = False
                 if fin_cb:
                     fin_cb()

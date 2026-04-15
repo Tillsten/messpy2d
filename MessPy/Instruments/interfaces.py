@@ -371,7 +371,7 @@ class IRotationStage(IDevice):
         pass
 
     @abc.abstractmethod
-    def is_moving(self):
+    def is_moving(self) -> bool:
         pass
 
     def move_relative(self, x):

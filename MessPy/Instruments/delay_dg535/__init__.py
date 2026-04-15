@@ -1,7 +1,7 @@
-from MessPy.Instruments.interfaces import IDelayLine
+from MessPy.Instruments.interfaces import IDelayLine, IShutter
 from MessPy.Instruments.delay_dg535.delay_gen import DG535
 import attr
-
+import time
 
 @attr.s(auto_attribs=True, kw_only=True)
 class GeneratorDelayline(IDelayLine):
@@ -43,6 +43,22 @@ class GeneratorDelayline(IDelayLine):
         self.last_set = fs
         self.generator.set_delay('A', -fs + self.home_pos)
 
+
+@attr.s(auto_attribs=True, kw_only=True)
+class DGGShutter(IShutter):
+    generator: DG535
+    cur_state: bool = True
+
+    def toggle(self):
+        if self.cur_state:
+            self.generator.cmd("TM 2\n")
+            self.cur_state = False
+        else:
+            self.generator.cmd("TM 1\n")
+            self.cur_state = True
+    
+    def is_open(self) -> bool:
+        return self.cur_state
 
 if __name__ == '__main__':
     import time
