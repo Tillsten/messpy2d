@@ -52,7 +52,7 @@ class Avaspec(NiceLib):
 class MeasurmentSettings:
     start_pixel: int = 0
     stop_pixel: int = 2047
-    int_time: float = 0.6# in ms
+    int_time: float = 0.3# in ms
     int_delay: int = 0
     n_avg: int = 1
     dark_correct: bool = True
@@ -177,8 +177,9 @@ class AvantesSpec:
         self.is_reading = True
         self.count = 0
         Avaspec.AVS_MeasureCallback(hdl, callback, -2)
-        self.ardudino.write(b's%d\n' % 300)
-        self.ardudino.write(b'r%d\n' % (self.shots+0))
+        if self.ardudino:
+            self.ardudino.write(b's%d\n' % 300)
+            self.ardudino.write(b'r%d\n' % (self.shots+0))
         #ans = self.ardudino.read_until(b'\r\n')
         #print(ans)
         #assert(ans == '%d\r\n'%self.shots)
@@ -188,6 +189,7 @@ class AvantesSpec:
         def callback(handle, intp):
             scope_data = self.device.GetScopeData()[1]
             self.data[:scope_data.size, self.count] = scope_data#[:self.wl_index[1]-self.wl_index[0]]
+            assert self.ardudino is not None
             out = self.ardudino.read(2)
             c, a = out
             #print(c, a)
