@@ -49,7 +49,7 @@ class DG535:
             logger.info("CMD %s sent"%cmd)
             double_cmd = "".join(list(double(cmd)))
             self.port.write(double_cmd.encode('ascii')[:-1])
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     def set_delay(self, channel: Literal['A', 'B', 'C', 'D'], delay_ns: float):
         """Set delay for channel in seconds"""
@@ -58,7 +58,7 @@ class DG535:
         self.cmd(f'DT {channel_int}, 1, {delay: .2f}E-9\n')
         disp = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'T0': 4}
         
-        self.cmd(f'DL 1, 0, {disp[channel]}\n')
+        #self.cmd(f'DL 1, 0, {disp[channel]}\n')
 
 
 if __name__ == '__main__':

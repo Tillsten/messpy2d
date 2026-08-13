@@ -290,7 +290,7 @@ class Controller(QObject):
             
         elif hasattr(self.plan, "make_step"):
             try:
-                print('make_step')
+                #print('make_step')
                 self.plan.make_step()
                 time.sleep(0.02)
             except StopIteration:

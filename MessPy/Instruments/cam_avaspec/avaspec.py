@@ -52,7 +52,7 @@ class Avaspec(NiceLib):
 class MeasurmentSettings:
     start_pixel: int = 0
     stop_pixel: int = 2047
-    int_time: float = 0.3# in ms
+    int_time: float = 0.4# in ms
     int_delay: int = 0
     n_avg: int = 1
     dark_correct: bool = True

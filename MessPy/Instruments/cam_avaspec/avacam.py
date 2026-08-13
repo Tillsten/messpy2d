@@ -76,24 +76,21 @@ class AvaCam(ICam):
         t_total = time.time()
         while self._spec.is_reading:
             time.sleep(0.030)
+        self.lock.release()
 
         s.data = s.data[LOWER_CHAN:UPPER_CHAN, :]
 
         pump_on = self._spec.analog_in[:] < 150
         probe_on = s.data[500, :] > 10_000
 
-        self.lock.release()
 
         print(self._spec.analog_in[0:10])
-        #print(ff)
-        if self.background is not None:
-            self._spec.data[:, 1::2] -= self.background[:, 0, None]
-            self._spec.data[:, (1-1)::2] -= self.background[:, 1, None]
-        spec = Spectrum.create(self._spec.data, name='Probe',
-                               frames=4, first_frame=np.argmax(pump_on))
+        ff = int(pump_on[0])
+        print(ff)
+
         # if ff == 0:
         #spec.signal *= -1
-        if not np.all(probe_on[:4]):
+        if np.sum(probe_on[:4]) == 2:
             print(pump_on.sum(), probe_on.sum())
             both_on = (pump_on & probe_on)
             both_off = ~(pump_on | probe_on)
@@ -104,8 +101,15 @@ class AvaCam(ICam):
             probe_unpumped = s.data[:, probe_only] - back
             probe_pumped = s.data[:, both_on] - s.data[:, pump_only]
             signal = 1000*np.log10(probe_pumped.mean(1)/probe_unpumped.mean(1))
-
+            spec = Spectrum.create(self._spec.data, name='Probe',
+                        frames=frames, first_frame=ff)
             spec.signal = signal
+        else:
+            if self.background is not None:
+                self._spec.data[:, ff::2] -= self.background[:, 0, None]
+                self._spec.data[:, (1-ff)::2] -= self.background[:, 1, None]
+            spec = Spectrum.create(self._spec.data, name='Probe',
+                               frames=frames, first_frame=ff)
         return {"Probe": spec}, self._spec.chopper
 
     def set_shots(self, shots):
