@@ -116,9 +116,7 @@ class AOMTwoDPlan(ScanPlan):
     def scan(self):
         c = self.controller
         for self.t2_idx, self.cur_t2 in enumerate(self.t2):
-            c.delay_line.set_pos(self.cur_t2 * 1000, do_wait=False)
-            while c.delay_line.moving:
-                yield
+            c.delay_line.set_pos(self.cur_t2 * 1000, do_wait=True)
 
             yield from self.measure_point()
             self.time_tracker.point_ending()

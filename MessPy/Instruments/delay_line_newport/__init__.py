@@ -45,6 +45,39 @@ controller_states = {
 }
 
 
+states = """
+0A NOT INITIALIZED: after reset
+0B NOT INITIALIZED: after CONFIG state
+0C NOT INITIALIZED: after INITIALAZING state
+0D NOT INITIALIZED: after NOT_REFERENCED state
+0E NOT INITIALIZED: after HOMING state
+0F NOT INITIALIZED: after MOVING state
+10 NOT INITIALIZED: after READY state
+11 NOT INITIALIZED: after DISABLE state 
+12 NOT INITIALIZED: after JOGGING state 
+13 NOT INITIALIZED: error, Stage type not valid 
+14 CONFIGURATION
+1E INITIALAZING: launch by USB
+1F INITIALAZING: launch by Remote Control
+28 NOT_REFERENCED
+32 HOMING: launch by USB
+33 HOMING: launch by Remote Control
+3C MOVING
+46 READY: after MOVING state
+47 READY: after MOVING state
+48 READY: after DISABLE state
+49 READY: after JOGGING state
+50 DISABLE: after READY state
+51 DISABLE: after MOVING state
+52 DISABLE: after JOGGING state
+5A JOGGING: after READY state
+5B JOGGING: after DISABLE state
+"""
+controller_states = {}
+for s in states.splitlines()[1:]:
+    controller_states[s[:2]] = s[3:]
+
+
 class DSignals(QObject):
     sigDegreesChanged = Signal(float)
     sigMovementStarted = Signal()
@@ -53,8 +86,8 @@ class DSignals(QObject):
 
 @attr.s(auto_attribs=True)
 class NewportDelay(IDelayLine):
-    name: str = "Newport AGP stage"
-    comport: str = "COM7"
+    name: str = 'Newport AGP stage'
+    comport: str = 'COM5'
     rot: serial.Serial = attr.ib()
     last_pos: float = 0
     pos_sign = -1.0
@@ -138,15 +171,15 @@ class NewportDelay(IDelayLine):
 
 if __name__ == "__main__":
     import time
-
-    rs = NewportDelay(comport="COM7")
-    print("change first")
+    rs = NewportDelay(comport='COM5')
+    print('change first')
     print(rs.get_pos_mm())
     print(rs.controller_state())
-    rs.move_mm(25)
-    rs.w("1SR?")
-    print(rs.rot.readall())
-    rs.w("1SL?")
-    print(rs.rot.readall())
-    print(rs.controller_state())
+    rs.move_mm(100)
+    print(rs.is_moving())
+    #rs.w("1SR?")
+    #print(rs.rot.readall())
+    #rs.w("1SL?")
+    #print(rs.rot.readall())
+    #print(rs.controller_state())
 # rs.set_pos(1)

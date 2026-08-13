@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
         super(MainWindow, self).__init__()
         self.setWindowTitle("Messpy-2D Edition")
-        self.setWindowIcon(qta.icon("fa.play"))
+        self.setWindowIcon(qta.icon("fa5s.play"))
         self.controller = controller  # controller
         logger.info("Creating loop thread")
         self.controller_thread = QThread()
@@ -278,10 +278,10 @@ class CommandMenu(QWidget):
             if result == QMessageBox.Yes:
                 c.stop_plan()
 
-        stop_plan_but = QPushButton(qta.icon("fa.stop"), "Stop")
+        stop_plan_but = QPushButton(qta.icon("fa5s.stop"), "Stop")
         stop_plan_but.clicked.connect(ask_stop)
 
-        pause_plan_but = QPushButton(text="Pause plan", icon=qta.icon("fa.pause"))
+        pause_plan_but = QPushButton(text="Pause plan", icon=qta.icon("fa5s.pause"))
         pause_plan_but.clicked.connect(lambda: setattr(c, "pause_plan", True))
 
         reopen_planview_but = QPushButton(
@@ -295,7 +295,7 @@ class CommandMenu(QWidget):
             but.setDisabled(True)
 
         cb_running = QPushButton(
-            text="Running", icon=qta.icon("fa.play", color="white")
+            text="Running", icon=qta.icon("fa5s.play", color="white")
         )
         cb_running.setCheckable(True)
         cb_running.setChecked(True)
@@ -313,7 +313,9 @@ class CommandMenu(QWidget):
 
     def add_rot_stage(self, rs):
         rsi = ControlFactory(
-            "Angle", rs.set_degrees, format_str="%.1f deg", presets=[0, 45]
+            "Angle", 
+            lambda x: rs.set_degrees(float(x)), 
+            format_str="%.1f deg", presets=[0, 45]
         )
         rsi.update_value(rs.get_degrees())
         rs.sigDegreesChanged.connect(rsi.update_value)

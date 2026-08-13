@@ -1,10 +1,11 @@
 import platform
 import sys
-from MessPy.Config import config
-from MessPy.Instruments.mocks import CamMock, DelayLineMock, StageMock, PowerMeterMock
 from loguru import logger
 
-logger.info("Init HwRegistry")
+from MessPy.Config import config
+from MessPy.Instruments.mocks import (CamMock, DelayLineMock,
+    StageMock, PowerMeterMock)
+
 TESTING = config.testing
 _cam = None  # CamMock()
 _cam2 = None  # CamMock(name="Mock2")
@@ -14,9 +15,9 @@ _rot_stage = None
 _shutter = []
 _sh = None
 _shaper = None
+_power_meter = None
 
 pc_name = platform.node()
-
 if len(sys.argv) > 1:
     arg = sys.argv[1]
 else:
@@ -29,18 +30,18 @@ if pc_name == "DESKTOP-RMRQA8D":
     logger.info("Importing and initializing AvaSpec")
     from MessPy.Instruments.cam_avaspec import AvaCam
 
+  
+    from MessPy.Instruments.delay_dg535 import GeneratorDelayline, DGGShutter
     _cam = AvaCam()
-
-    logger.info("Importing and initializing GeneratorDelayline")
-    from MessPy.Instruments.delay_dg535 import GeneratorDelayline
-
-    _dl = GeneratorDelayline()
-
     _cam2 = None
-
-    # from MessPy.Instruments.delay_line_apt import DelayLine
-    # _dl = DelayLine(name="VisDelay")
-
+    #from MessPy.Instruments.delay_line_apt import DelayLine
+    #_dl = DelayLine(name="VisDelay")
+    #from MessPy.Instruments.delay_line_newport import NewportDelay
+    _dl = GeneratorDelayline()
+    #_dl = NewportDelay('COM5', beam_passes=4, pos_sign=-1)
+    _shutter.append(DGGShutter(generator=_dl.generator, name='Gen Shutter'))
+    from MessPy.Instruments.rot_stage_thorlabs import TLRotStage
+    _rot_stage = TLRotStage("Polarizer")
 elif pc_name == "DESKTOP-BBLLUO7":
 
     def init_pt():

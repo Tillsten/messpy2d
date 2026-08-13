@@ -52,7 +52,7 @@ class Avaspec(NiceLib):
 class MeasurmentSettings:
     start_pixel: int = 0
     stop_pixel: int = 2047
-    int_time: float = 0.45  # in ms
+    int_time: float = 0.4# in ms
     int_delay: int = 0
     n_avg: int = 1
     dark_correct: bool = True
@@ -104,7 +104,7 @@ class AvantesSpec:
     data: np.ndarray = attr.field(init=False)
     chopper: np.ndarray = attr.field(init=False)
     analog_in: np.ndarray = attr.field(init=False)
-    shots: int = 300
+    shots: int = 30
     count: int = 0
     wl_range: tuple[float, float] = (0, 2000)
     wl_index: tuple[int, int] = attr.attrib()
@@ -141,9 +141,10 @@ class AvantesSpec:
         if self.port is not None:
             port = Serial(self.port, baudrate=115200)
             port.timeout = 0.3
-            print(port.read(1))
-            port.flushInput()
-            port.write(b"10\n")
+            while port.read(1) != b'A':
+                pass
+
+            port.write(b'r10\n')
             print(port.read(20))
             port.timeout = 1.3
         else:
@@ -176,29 +177,32 @@ class AvantesSpec:
         self.is_reading = True
         self.count = 0
         Avaspec.AVS_MeasureCallback(hdl, callback, -2)
-
-        if self.ardudino is not None:
-            self.ardudino.flushInput()
-            self.ardudino.write(b"%d\n" % self.shots)
-        # ans = self.ardudino.read_until(b'\r\n')
-        # print(ans)
-        # assert(ans == '%d\r\n'%self.shots)
+        if self.ardudino:
+            self.ardudino.write(b's%d\n' % 300)
+            self.ardudino.write(b'r%d\n' % (self.shots+0))
+        #ans = self.ardudino.read_until(b'\r\n')
+        #print(ans)
+        #assert(ans == '%d\r\n'%self.shots)
 
     def callback_factory(self, fin_cb=None):
         @Avaspec._ffi.callback("void(long*, int*)")
         def callback(handle, intp):
             scope_data = self.device.GetScopeData()[1]
-            self.data[: scope_data.size, self.count] = (
-                scope_data  # [:self.wl_index[1]-self.wl_index[0]]
-            )
-            if self.ardudino is not None:
-                out = self.ardudino.read(2)
-                c, a = out
-                self.chopper[self.count] = c
-                self.analog_in[self.count] = a
+            self.data[:scope_data.size, self.count] = scope_data#[:self.wl_index[1]-self.wl_index[0]]
+            assert self.ardudino is not None
+            out = self.ardudino.read(2)
+            c, a = out
+            #print(c, a)
+            self.chopper[self.count] = a
+            self.analog_in[self.count] = a
             self.count += 1
+            #print(self.count)
 
             if self.count == self.shots:
+                #out = self.ardudino.read(2*self.shots)
+                #self.chopper[:] = np.frombuffer(out[::2], dtype=np.int8)
+                #self.analog_in[:] = np.frombuffer(out[1::2], dtype=np.int8)
+                #print(out)
                 self.is_reading = False
                 if fin_cb:
                     fin_cb()
@@ -230,28 +234,33 @@ if __name__ == "__main__":
     i400 = np.argmin(abs(spec.wl - 350))
     i1200 = np.argmin(abs(spec.wl - 1200))
     print(i400, i1200)
-
+    t = 0
     def read():
+        global t
         if not spec.is_reading:
             if hasattr(spec, "data"):
                 mean = spec.data.mean(1)
                 spec.data -= mean[None, -300:].mean()
                 l1.setData(spec.data[:, 0])
                 sign = -1 if spec.analog_in[0] > 100 else 1
-                # print(sign)
-                # l2.setData(spec.wl, 1000*sign*np.log10(spec.data[:, ::2].mean(1)/spec.data[:, 1::2].mean(1)))
-                l2.setData(spec.data[i400, :])
+                #print(sign)
+                #l2.setData(spec.wl, 1000*sign*np.log10(spec.data[:, ::2].mean(1)/spec.data[:, 1::2].mean(1)))
+                l2.setData(spec.data[800, :])
                 l3.setData(spec.analog_in)
-                # 2.setData(100*spec.data.std(1)/spec.data.mean(1))
-                # print(spec.analog_in[1-2:])
-                # spec.ardudino.read(100)
-            spec.start_reading(100, spec.callback_factory())
+                l3.setData(spec.chopper)
+                #2.setData(100*spec.data.std(1)/spec.data.mean(1))
+                #print(spec.analog_in[1-2:])
+                #spec.ardudino.read(100)
+                print(time.time() - t)
+            spec.start_reading(20, spec.callback_factory())
+
+            t = time.time()
         else:
             pass
 
     timer = QTimer()
     timer.timeout.connect(read)
-    timer.start(30)
+    timer.start(130)
     pw.show()
     pw2.show()
     app.exec_()

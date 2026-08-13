@@ -1,5 +1,7 @@
 from typing import Literal
 from serial import Serial
+from loguru import logger
+from threading import Lock
 
 import time
 # Open serial port
@@ -31,6 +33,7 @@ class DG535:
     }
 
     def __init__(self, port='COM4'):
+        self.lock = Lock()
         s = Serial(port, 9600*12, timeout=1)
         s.write(b'++mode 1\n')
         s.write(b'++addr 15\n')
@@ -38,11 +41,15 @@ class DG535:
         s.write(b'++eoi 1\n')
         s.write(b'++auto 1\n')
         self.port = s
+        self.cmd("ES\n")
 
     def cmd(self, cmd):
-        print(cmd)
-        double_cmd = "".join(list(double(cmd)))
-        self.port.write(double_cmd.encode('ascii')[:-1])
+        cmd = 'ES\n' + cmd
+        with self.lock:
+            logger.info("CMD %s sent"%cmd)
+            double_cmd = "".join(list(double(cmd)))
+            self.port.write(double_cmd.encode('ascii')[:-1])
+            time.sleep(0.05)
 
     def set_delay(self, channel: Literal['A', 'B', 'C', 'D'], delay_ns: float):
         """Set delay for channel in seconds"""
@@ -50,12 +57,12 @@ class DG535:
         channel_int = self.channel_to_int[channel]
         self.cmd(f'DT {channel_int}, 1, {delay: .2f}E-9\n')
         disp = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'T0': 4}
-        time.sleep(0.05)
-        self.cmd(f'DL 1, 0, {disp[channel]}\n')
+        
+        #self.cmd(f'DL 1, 0, {disp[channel]}\n')
 
 
 if __name__ == '__main__':
-    dg = DG535(port='COM10')
+    dg = DG535(port='COM4')
     dg.cmd('DS\n')
     for i in range(100):
         for j in range(20):
