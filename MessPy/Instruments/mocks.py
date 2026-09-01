@@ -89,6 +89,8 @@ class CamMock(ICam):
 
     noise_scale: float = 0.1
     peak_width: float = 20
+    peak_amp: float = 1000
+    peak_center: float = 250
 
     def get_state(self) -> dict:
         return {"shots": self.shots}
@@ -99,7 +101,9 @@ class CamMock(ICam):
     def read_cam(self):
         t0 = time.time()
         x = self.get_wavelength_array()
-        y = 300 * np.exp(-((x - 250) ** 2) / self.peak_width**2 / 2)
+        y = self.peak_amp * np.exp(
+            -((x - self.peak_center) ** 2) / self.peak_width**2 / 2
+        )
 
         knife_amp = state.knife_amp()
         y = y * (knife_amp / 4)
@@ -120,8 +124,12 @@ class CamMock(ICam):
             if state.t > 0
             else 0.1 * np.exp(state.t / 100)
         )
-        y_sig = 300 * np.exp(-((x - 250) ** 2) / 20**2 / 2)
-        y_sig -= 300 * np.exp(-((x - 310) ** 2) / 20**2 / 2)
+        y_sig = self.peak_amp * np.exp(
+            -((x - self.peak_center) ** 2) / self.peak_width**2 / 2
+        )
+        y_sig -= self.peak_amp * np.exp(
+            -((x - (self.peak_center + 60)) ** 2) / self.peak_width**2 / 2
+        )
         dist = np.sqrt(state.stage_pos[0] ** 2 + state.stage_pos[1] ** 2)
         y_sig *= np.exp(-dist / 0.5)
         a[::2, :] *= 1 + signal * y_sig / 300
