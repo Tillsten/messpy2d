@@ -1,12 +1,9 @@
 import numpy as np
-
 from pyqtgraph import (
     PlotDataItem,
-    PlotItem,
     PlotWidget,
-    GraphicsLayoutWidget,
-    mkPen,
     mkColor,
+    mkPen,
 )
 
 
@@ -66,9 +63,10 @@ class BlendingPlotter(PlotWidget):
 
 if __name__ == "__main__":
     import sys
-    from PySide6.QtWidgets import QApplication
-    from PySide6.QtCore import QTimer
     import time
+
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
     plotter = BlendingPlotter(num_plots=40, width=3, useOpenGL=False)

@@ -1,20 +1,16 @@
-from attr import dataclass, attr
+from typing import Literal
 
-from matplotlib.colors import Colormap
+import numpy as np
+from attr import attr, dataclass
 from pyqtgraph import (
     GraphicsLayoutWidget,
-    PlotItem,
     ImageItem,
     InfiniteLine,
     PlotDataItem,
+    PlotItem,
     mkPen,
 )
-from pyqtgraph.colormap import getFromColorcet, ColorMap
-
-from typing import ClassVar, Literal
-
-import numpy as np
-
+from pyqtgraph.colormap import getFromColorcet
 from PySide6.QtCore import Qt
 
 
@@ -169,8 +165,9 @@ class PumpProbeView(GraphicsLayoutWidget):
 
 if __name__ == "__main__":
     import sys
-    from PySide6.QtWidgets import QApplication
+
     import h5py
+    from PySide6.QtWidgets import QApplication
 
     with h5py.File(r"MessPy\Plans\25-08-05 15_44 PumpProbe cav_0.2benz_0.h5", "r") as f:
         # Load data from the HDF5 file

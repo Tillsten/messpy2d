@@ -1,18 +1,16 @@
 import time
-from typing import Optional, Tuple
 
 import attr
 import numpy as np
 from nicelib import (
-    NiceObject,
-    load_lib,
     NiceLib,
-    Sig,
+    NiceObject,
     RetHandler,
+    Sig,
+    load_lib,
     ret_ignore,
     ret_return,
 )
-
 from serial import Serial
 
 
@@ -59,7 +57,7 @@ class MeasurmentSettings:
     smooth_pixel: int = 2
     saturation_detection: bool = False
     store_to_ram: int = 0
-    trigger_type: Tuple[int] = (2, 0, 0)
+    trigger_type: tuple[int] = (2, 0, 0)
 
     """
     typedef struct {
@@ -111,15 +109,15 @@ class AvantesSpec:
     _cb: object = None
     is_reading: bool = False
     first_chop: bool = False
-    port: Optional[str] = "COM3"
-    ardudino: Optional[Serial] = attr.attrib()
+    port: str | None = "COM3"
+    ardudino: Serial | None = attr.attrib()
 
     @classmethod
     def take_nth(cls, i=0):
         Avaspec.Init(0)
         num_dev = Avaspec.UpdateUSBDevices()
         if num_dev == 0:
-            raise IOError("No Avantes spectrometer found")
+            raise OSError("No Avantes spectrometer found")
         elif i + 1 > num_dev:
             raise ValueError(
                 f"Only {num_dev} spectrometers found. {i}-th was requested"
@@ -160,7 +158,7 @@ class AvantesSpec:
 
     def start_reading(self, shots: int, callback):
         if self.is_reading:
-            raise IOError("Already reading")
+            raise OSError("Already reading")
         ffi = Avaspec._ffi
         self.shots = shots
         self.measurement_settings.store_to_ram = shots

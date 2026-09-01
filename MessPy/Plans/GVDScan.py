@@ -1,15 +1,10 @@
-import os.path
-import threading
 import time
 import typing as T
-from pathlib import Path
 
 import attr
-
 import numpy as np
 from PySide6.QtCore import Signal
 
-from MessPy.Config import config
 from MessPy.ControlClasses import Cam
 from MessPy.Instruments.dac_px import AOM
 from MessPy.Plans.PlanBase import Plan
@@ -19,7 +14,7 @@ from MessPy.Plans.PlanBase import Plan
 class GVDScan(Plan):
     cam: Cam
     aom: AOM
-    gvd_list: T.List[float]
+    gvd_list: list[float]
     gvd_idx: int = 0
     waiting_time: float = 0.1
     timeout: float = 3
@@ -28,7 +23,7 @@ class GVDScan(Plan):
     tod: float = 0
     fod: float = 0
     shots: int = 50
-    observed_channel: T.Optional[int] = None
+    observed_channel: int | None = None
     settings_before: dict = attr.Factory(dict)
 
     sigPointRead: T.ClassVar[Signal] = Signal()
@@ -36,7 +31,7 @@ class GVDScan(Plan):
     plan_shorthand: T.ClassVar[str] = "GVDscan"
 
     def __attrs_post_init__(self):
-        super(GVDScan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         n_disp = len(self.gvd_list)
         n_pix = self.cam.channels
         if self.aom.calib is None:

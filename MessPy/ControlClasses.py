@@ -2,12 +2,10 @@ import threading
 import time
 import typing as T
 
-
 import numpy as np
 from attr import Factory, attrib, attrs, define
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
-
 
 import MessPy.Instruments.interfaces as I
 from MessPy.Config import config
@@ -15,7 +13,6 @@ from MessPy.HwRegistry import (
     _cam,
     _cam2,
     _dl,
-    _dl2,
     _power_meter,
     _rot_stage,
     _sh,
@@ -38,7 +35,7 @@ class Cam(QObject):
 
     shots: int = attrib(init=False)
 
-    last_read: T.Optional[I.Reading] = attrib(init=False)
+    last_read: I.Reading | None = attrib(init=False)
     wavelengths: np.ndarray = attrib(init=False)
     wavenumbers: np.ndarray = attrib(init=False)
     disp_axis: np.ndarray = attrib(init=False)
@@ -165,7 +162,7 @@ class DelayLine(QObject):
     _dl: I.IDelayLine = _dl
     pos: float = 0
     moving: bool = False
-    _thread: T.Optional[object] = None
+    _thread: object | None = None
 
     sigPosChanged: T.ClassVar[Signal] = Signal(float)
 
@@ -226,14 +223,14 @@ class Controller(QObject):
 
     cam: Cam = attrib(init=False)
     delay_line: DelayLine = Factory(lambda: DelayLine(_dl))
-    delay_line_second: T.Optional[DelayLine] = None
-    cam2: T.Optional[Cam] = attrib(init=False)
-    cam_list: T.List[Cam] = Factory(list)
-    shutter: T.List[I.IShutter] = _shutter
-    rot_stage: T.Optional[I.IRotationStage] = _rot_stage
-    sample_holder: T.Optional[I.ILissajousScanner] = _sh
-    shaper: T.Optional[object] = _shaper
-    power_meter: T.Optional[I.IPowerMeter] = _power_meter
+    delay_line_second: DelayLine | None = None
+    cam2: Cam | None = attrib(init=False)
+    cam_list: list[Cam] = Factory(list)
+    shutter: list[I.IShutter] = _shutter
+    rot_stage: I.IRotationStage | None = _rot_stage
+    sample_holder: I.ILissajousScanner | None = _sh
+    shaper: object | None = _shaper
+    power_meter: I.IPowerMeter | None = _power_meter
     plan: T.Optional["Plan"] = None
     pause_plan: bool = False
 

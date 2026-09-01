@@ -1,33 +1,27 @@
-import functools
 import concurrent.futures
-import threading
+import functools
 import json
-from pathlib import Path
-from numpy._typing import NDArray
+import threading
+from collections.abc import Generator
 from datetime import datetime
+from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
-    Callable,
     ClassVar,
-    Dict,
-    Generator,
     Literal,
-    Optional,
-    Tuple,
 )
 
 import attr
 import h5py
 import numpy as np
-from attr import attrib, attrs
+from attr import attrs
+from numpy._typing import NDArray
 from PySide6.QtCore import Signal
 
 from MessPy.ControlClasses import Controller, config
 from MessPy.Instruments.dac_px import AOM
 from MessPy.Instruments.signal_processing import THz2cm, cm2THz
 
-from .PlanBase import Plan, ScanPlan
-
+from .PlanBase import ScanPlan
 
 h5py_ops = dict(
     compression="lzf", compression_opts=5, shuffle=True, chunk=True, track_order=True
@@ -65,9 +59,9 @@ class AOMTwoDPlan(ScanPlan):
     save_frames_enabled: bool = False
 
     # Arrays to display
-    disp_arrays: Dict[str, np.ndarray] = attr.Factory(dict)
-    last_ir: Optional[np.ndarray] = None
-    last_2d: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    disp_arrays: dict[str, np.ndarray] = attr.Factory(dict)
+    last_ir: np.ndarray | None = None
+    last_2d: tuple[np.ndarray, np.ndarray] | None = None
 
     # Signals
     sigStepDone: ClassVar[Signal] = Signal()
@@ -266,4 +260,4 @@ class AOMTwoDPlan(ScanPlan):
 
     def stop_plan(self):
         self.do_stop = True
-        super(AOMTwoDPlan, self).stop_plan()
+        super().stop_plan()

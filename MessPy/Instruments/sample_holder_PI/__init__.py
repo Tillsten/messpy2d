@@ -1,15 +1,18 @@
-from pathlib import Path
-from MessPy.Instruments.interfaces import ILissajousScanner
-import threading
-import pipython
-from pipython import pitools, fastaligntools
-from MessPy.Instruments.sample_holder_PI.c843_cppyy import C843
-from MessPy.Instruments.sample_holder_PI.newport_smc import NewPortStage
-import typing
-import time
 import json
+import threading
+import time
+import typing
+from pathlib import Path
+
 import attr
 import numpy as np
+import pipython
+from pipython import fastaligntools, pitools
+
+from MessPy.Instruments.interfaces import ILissajousScanner
+from MessPy.Instruments.sample_holder_PI.c843_cppyy import C843
+from MessPy.Instruments.sample_holder_PI.newport_smc import NewPortStage
+
 mag = pipython.GCSDevice()
 
 dir = Path(__file__).parent
@@ -58,12 +61,12 @@ class SampleHolder(ILissajousScanner):
         if y is not None:
             self.c843.move_mm(y)
 
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         y = self.c843.get_pos_mm()
         x = mag.qPOS('1')['1']
         return x, y
 
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         a = self.c843.is_moving()
         b = mag.qMOV('1')['1']
         return a, b

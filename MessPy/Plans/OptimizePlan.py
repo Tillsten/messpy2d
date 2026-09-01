@@ -1,8 +1,7 @@
+
 import attr
 import numpy as np
-from . import Plan
 
-from typing import List, Dict, Optional
 from MessPy.Instruments.interfaces import ICam
 
 
@@ -11,11 +10,11 @@ class Parameter:
     name: str
     upper_lim: float = np.inf
     lower_lim: float = -np.inf
-    start_val: Optional[float] = None
+    start_val: float | None = None
 
 
 class Manipulator:
-    params = List[Parameter]
+    params = list[Parameter]
 
     def apply(self):
         raise NotImplementedError

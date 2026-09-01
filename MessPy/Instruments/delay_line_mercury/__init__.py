@@ -1,9 +1,11 @@
-from MessPy.Instruments.interfaces import IDelayLine
-import time
-import os.path as osp
 import ctypes as ct
-import cffi
+import os.path as osp
 import time
+
+import cffi
+
+from MessPy.Instruments.interfaces import IDelayLine
+
 # ct.WinDLL('PI_GCS_DLL_x64')
 
 #header = ''.join(open('PI_GCS2_DLL.h').readlines()[126:-3])
@@ -112,7 +114,7 @@ class DelayLine(IDelayLine):
         try:
             with open('zeropos', 'r') as f:
                 self.home_pos = float(f.readline())
-        except IOError:
+        except OSError:
             self.home_pos = 9.0
 
     def get_pos_mm(self):

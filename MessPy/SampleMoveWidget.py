@@ -1,18 +1,17 @@
 # from Config import config
 import attr
-from PySide6.QtCore import QTimer, Qt, QObject, Slot
-from PySide6.QtGui import QKeyEvent, QPixmap, QFocusEvent
+from PySide6.QtCore import QObject, Qt, QTimer, Slot
+from PySide6.QtGui import QFocusEvent, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
-    QWidget,
+    QLabel,
     QLineEdit,
     QPushButton,
-    QLabel,
+    QWidget,
 )
 
-from MessPy.QtHelpers import vlay, hlay
-
 from MessPy.Instruments.interfaces import ILissajousScanner
+from MessPy.QtHelpers import hlay, vlay
 
 
 @attr.define(slots=False)
@@ -69,7 +68,7 @@ class MoveWidget(QWidget):
 
     def focusOutEvent(self, a0: QFocusEvent) -> None:
         self.home_label.setStyleSheet("background-color: red")
-        super(MoveWidget, self).focusOutEvent(a0)
+        super().focusOutEvent(a0)
 
     def show_help(self):
         self.help_label = QLabel()
@@ -147,7 +146,7 @@ class MoveWidget(QWidget):
 
 class SettingsMoveWidget(QWidget):
     def __init__(self, mw: MoveWidget, *args, **kwargs):
-        super(SettingsMoveWidget, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.mw = mw
         self.x_button = QPushButton("Set x:")
         self.x_button.clicked.connect(self.x_click)

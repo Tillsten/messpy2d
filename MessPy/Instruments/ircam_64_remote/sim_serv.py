@@ -1,5 +1,5 @@
-import zmq
 import numpy as np
+import zmq
 
 ctx = zmq.Context()
 socket = ctx.socket(zmq.REP)

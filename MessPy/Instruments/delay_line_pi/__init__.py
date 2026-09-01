@@ -3,7 +3,7 @@ from nicelib import load_lib
 a = load_lib("pi", __package__)
 
 print(a._argnames)
-from nicelib import load_lib, NiceLib, Sig, NiceObject, RetHandler, ret_ignore
+from nicelib import NiceLib, NiceObject, RetHandler, Sig, load_lib, ret_ignore
 
 
 @RetHandler(num_retvals=0)

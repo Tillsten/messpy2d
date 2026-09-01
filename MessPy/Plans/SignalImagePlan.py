@@ -1,15 +1,15 @@
 import concurrent
 import concurrent.futures
-
-from attr import define, attrib
-from PySide6.QtCore import Signal
-from loguru import logger
-from MessPy.ControlClasses import Cam, Reading
-from MessPy.Instruments.interfaces import ICam, ILissajousScanner
-from MessPy.Plans.PlanBase import ScanPlan
+from typing import ClassVar
 
 import numpy as np
-from typing import ClassVar
+from attr import attrib, define
+from loguru import logger
+from PySide6.QtCore import Signal
+
+from MessPy.ControlClasses import Reading
+from MessPy.Instruments.interfaces import ICam, ILissajousScanner
+from MessPy.Plans.PlanBase import ScanPlan
 
 
 @define(auto_attribs=True, slots=False)
@@ -61,7 +61,7 @@ class SignalImagePlan(ScanPlan):
                 yield
 
     def post_scan(self):
-        logger.info(f"Post scan, saving data, calculating mean image")
+        logger.info("Post scan, saving data, calculating mean image")
         if self.cur_scan == 0:
             self.all_signals = self.cur_image[None, ...]
 

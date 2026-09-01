@@ -1,4 +1,12 @@
-from nicelib import load_lib, NiceLib, Sig, NiceObject, RetHandler, ret_ignore, ret_return
+from nicelib import (
+    NiceLib,
+    NiceObject,
+    RetHandler,
+    Sig,
+    load_lib,
+    ret_ignore,
+    ret_return,
+)
 
 
 @RetHandler(num_retvals=0)

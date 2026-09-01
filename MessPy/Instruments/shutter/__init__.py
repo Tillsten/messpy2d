@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
 """
 Implements communication to the the shutter
 controller form thorlabs.
 """
-from __future__ import print_function
 import serial
 
 
-
-class Shutter(object):
+class Shutter:
     def __init__(self, com_port=1):
         """
         Shutter object to control the shutter.

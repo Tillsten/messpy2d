@@ -1,10 +1,10 @@
 from xmlrpc.client import ServerProxy
-from MessPy.Config import config
-from MessPy.Instruments.interfaces import IRotationStage, IShutter, ILissajousScanner
-from wrapt import synchronized
-import typing
+
 import attr
-from Signal import Signal
+from wrapt import synchronized
+
+from MessPy.Config import config
+from MessPy.Instruments.interfaces import ILissajousScanner, IRotationStage, IShutter
 
 config.rot_server = 'http://130.133.30.223:8003'
 rot = ServerProxy(config.rot_server)
@@ -65,7 +65,7 @@ class Faulhaber(ILissajousScanner):
         return fh.get_home()
 
     @synchronized
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         return fh.is_xy_moving()
 
     @synchronized
@@ -77,7 +77,7 @@ class Faulhaber(ILissajousScanner):
         fh.set_pos_mm(x, y)
 
     @synchronized
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         return fh.get_pos_mm()
 
     @synchronized
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     sh = Faulhaber()
     print(sh.get_pos_mm())
     sh.set_pos_mm(10, 10)
-    print(getattr(sh, 'pos_home'))
+    print(sh.pos_home)
     #sh = Shutter()
     # sh.toggle()
     #rs = RotationStage()

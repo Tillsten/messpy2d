@@ -1,32 +1,28 @@
-from MessPy.Plans.PlanBase import Plan
-from MessPy.ControlClasses import Cam
-from MessPy.Instruments.dac_px import AOM
-import numpy as np
-from pyqtgraph.parametertree import Parameter, ParameterTree
-import pyqtgraph as pg
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import *
-from loguru import logger
-from typing import List, Callable, Tuple, ClassVar
-from MessPy.Instruments.interfaces import ICam
-import sys
+from typing import ClassVar
 
 import attr
+import numpy as np
+from loguru import logger
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import *
 
+from MessPy.ControlClasses import Cam
+from MessPy.Instruments.dac_px import AOM
+from MessPy.Plans.PlanBase import Plan
 
 
 @attr.s(auto_attribs=True, cmp=False, kw_only=True)
 class CalibPlan(Plan):
     cam: Cam
     dac: AOM
-    points: List[float]
-    amps: List[List[float]] = attr.Factory(list)
+    points: list[float]
+    amps: list[list[float]] = attr.Factory(list)
     single_spectra: np.ndarray = attr.ib(init=False)
     num_shots: int = 100
     separation: int = 500
     width: int = 50
     single: int = 6000
-    start_pos: Tuple[float, float] = 0
+    start_pos: tuple[float, float] = 0
     check_zero_order: bool = True
     channel: int = 67
 
@@ -34,7 +30,7 @@ class CalibPlan(Plan):
     plan_shorthand: ClassVar[str] = "Calibration"
 
     def __attrs_post_init__(self):
-        super(CalibPlan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         self.single_spectra = np.zeros((self.cam.channels, len(self.points)))
         gen = self.make_step_generator()
         self.make_step = lambda: next(gen)

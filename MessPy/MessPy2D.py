@@ -1,36 +1,34 @@
 from functools import partial
 
-
-from PySide6.QtCore import QTimer, Qt, Slot, QThread, QSettings
+import qtawesome as qta
+from loguru import logger
+from pyqtgraph import setConfigOptions
+from PySide6.QtCore import QSettings, Qt, QThread, QTimer, Slot
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
-    QMainWindow,
     QApplication,
-    QWidget,
-    QDockWidget,
-    QPushButton,
-    QLabel,
-    QSizePolicy,
-    QMessageBox,
-    QGroupBox,
     QCheckBox,
+    QDockWidget,
+    QGroupBox,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QWidget,
 )
-import qtawesome as qta
-from pyqtgraph import setConfigOptions
 from qtpy.QtWidgets import QVBoxLayout
-from loguru import logger
 
 from MessPy.Config import config
 from MessPy.ControlClasses import Controller
 from MessPy.Instruments.interfaces import ICam
 from MessPy.Plans import *
-
 from MessPy.QtHelpers import (
     ControlFactory,
-    make_groupbox,
-    ValueLabels,
     ObserverPlotWithControls,
+    ValueLabels,
     hlay,
+    make_groupbox,
     vlay,
 )
 from MessPy.SampleMoveWidget import MoveWidget
@@ -46,7 +44,7 @@ setConfigOptions(
 
 class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
-        super(MainWindow, self).__init__()
+        super().__init__()
         self.setWindowTitle("Messpy-2D Edition")
         self.setWindowIcon(qta.icon("fa5s.play"))
         self.controller = controller  # controller
@@ -249,7 +247,7 @@ class MainWindow(QMainWindow):
 
 class CommandMenu(QWidget):
     def __init__(self, controller, main_window):
-        super(CommandMenu, self).__init__()
+        super().__init__()
         self.main_window = main_window
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._layout = QVBoxLayout(self)
@@ -352,12 +350,11 @@ class CommandMenu(QWidget):
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)
         self._layout.addWidget(but)
-        return
 
 
 class ShutterControls(QGroupBox):
     def __init__(self, c: Controller):
-        super(ShutterControls, self).__init__()
+        super().__init__()
         self.setTitle("Shutters")
         assert len(c.shutter) > 0
         w = []
@@ -371,7 +368,7 @@ class ShutterControls(QGroupBox):
 
 class CamControls(QGroupBox):
     def __init__(self, c: Controller):
-        super(CamControls, self).__init__()
+        super().__init__()
         # type: list[tuple[str, Callable, str]]
         bg_buttons = [("BG", c.cam.get_bg, "fa5.circle")]
         if hasattr(c.cam, "calibrate_ref"):
@@ -412,7 +409,7 @@ class SpectrometerControls(QGroupBox):
         cam : ICam
             The camera object to control, here we assume it has a spectrometer object.
         """
-        super(SpectrometerControls, self).__init__()
+        super().__init__()
         spec = cam.cam.spectrograph
 
         def calc_and_set_wl(s):
@@ -479,7 +476,7 @@ class DelayLineControl(QGroupBox):
     """
 
     def __init__(self, c: Controller):
-        super(DelayLineControl, self).__init__()
+        super().__init__()
         dl = c.delay_line
         dl1c = ControlFactory(
             "Delay 1",

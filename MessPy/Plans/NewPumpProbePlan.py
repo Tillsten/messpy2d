@@ -1,21 +1,21 @@
+from collections.abc import Generator
 from functools import cached_property
 from itertools import cycle
-from typing import Any, ClassVar, Generator, Optional
+from typing import Any, ClassVar
 
+import h5py
 import numpy as np
-from attr import attr, attrib, attrs, field
+from attr import attrs, field
 from numpy.typing import NDArray
 from PySide6.QtCore import QThread, Signal  # type: ignore
-import h5py
-
 
 from MessPy.Instruments.interfaces import (
     ICam,
     IDelayLine,
     IRotationStage,
     IShutter,
-    TargetThread,
     Reading,
+    TargetThread,
 )
 
 from .PlanBase import ScanPlan
@@ -32,14 +32,14 @@ class NewPumpProbePlan(ScanPlan):
     cur_t_idx: int = 0
     cur_wl_idx: int = 0
     cur_scan_data: NDArray[np.float64] = field(init=False)
-    rot_stage: Optional[IRotationStage] = None
-    rot_angles: Optional[list[float]] = None
+    rot_stage: IRotationStage | None = None
+    rot_angles: list[float] | None = None
     rot_idx: int = 0
-    shutter_probe: Optional[IShutter] = None
-    shutter_pump: Optional[IShutter] = None
+    shutter_probe: IShutter | None = None
+    shutter_pump: IShutter | None = None
 
     center_wavelengths: NDArray[np.float64] = np.array([0.0])
-    reader_thread: Optional[QThread] = None
+    reader_thread: QThread | None = None
     sigStepDone: ClassVar[Signal] = Signal()
 
     @cached_property

@@ -3,17 +3,18 @@ This file scans the folding mirrors to find the best alignment to
 maximize the AOM efficiency.
 """
 
-from typing import ClassVar, Generator
 import time
+from typing import ClassVar
 
-from PySide6.QtCore import Signal
 import numpy as np
-from MessPy.Instruments.interfaces import IRotationStage, ICam
-from MessPy.Instruments.dac_px import AOM
-from .PlanBase import Plan
-from attr import Factory, dataclass, attrib
-
+from attr import Factory, attrib, dataclass
 from loguru import logger
+from PySide6.QtCore import Signal
+
+from MessPy.Instruments.dac_px import AOM
+from MessPy.Instruments.interfaces import ICam, IRotationStage
+
+from .PlanBase import Plan
 
 
 @dataclass

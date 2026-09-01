@@ -1,5 +1,6 @@
 import math
-from typing import Callable, Optional, Self, Union, overload
+from collections.abc import Callable
+from typing import Self, overload
 
 import attr
 import numpy as np
@@ -144,12 +145,12 @@ class Spectrum:
     data: np.ndarray
     mean: np.ndarray
     std: np.ndarray
-    max: Optional[np.ndarray]
-    name: Optional[str] = None
-    frame_data: Optional[np.ndarray] = None
-    frames: Optional[int] = None
-    first_frame: Optional[int] = None
-    signal: Optional[np.ndarray] = None
+    max: np.ndarray | None
+    name: str | None = None
+    frame_data: np.ndarray | None = None
+    frames: int | None = None
+    first_frame: int | None = None
+    signal: np.ndarray | None = None
 
     @classmethod
     def create(
@@ -204,13 +205,13 @@ class Reading2D:
     spectra: Spectrum
     interferogram: np.ndarray
     t2_ps: np.ndarray
-    window: Optional[Callable] = np.hanning
+    window: Callable | None = np.hanning
     upsample: int = 2
     rot_frame: float = 0
     freqs: np.ndarray = attr.ib()
     signal_2D: np.ndarray = attr.ib()
-    frames: Optional[np.ndarray] = None
-    ref_frames: Optional[np.ndarray] = None
+    frames: np.ndarray | None = None
+    ref_frames: np.ndarray | None = None
 
     @classmethod
     def from_spectrum(
@@ -219,7 +220,7 @@ class Reading2D:
         t2_ps: np.ndarray,
         rot_frame: float,
         save_frame_enabled: bool,
-        ref_frames: Optional[np.ndarray] = None,
+        ref_frames: np.ndarray | None = None,
         **kwargs,
     ) -> "Reading2D":
         assert s.frame_data is not None

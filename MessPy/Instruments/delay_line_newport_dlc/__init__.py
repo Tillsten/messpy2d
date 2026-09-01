@@ -1,9 +1,10 @@
 import time
 from typing import Literal
-from MessPy.Instruments.interfaces import IDelayLine
-from serial import Serial
-import attr
 
+import attr
+from serial import Serial
+
+from MessPy.Instruments.interfaces import IDelayLine
 
 state_str = """
 0A NOT INITIALIZED: after reset
@@ -56,7 +57,7 @@ class NewportDLC(IDelayLine):
         return Serial(self.port, baudrate=115200 * 4)
 
     def __attrs_post_init__(self):
-        super(NewportDLC, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         if self.controller_state() != 'READY':
             if self.controller_state() == 'NOT INITIALIZED':
                 self.write('IE')

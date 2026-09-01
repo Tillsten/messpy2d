@@ -2,9 +2,8 @@ import threading
 import typing as T
 
 import attr
-
 import numpy as np
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 
 from MessPy.ControlClasses import Cam
 from MessPy.Plans.PlanBase import Plan
@@ -21,7 +20,7 @@ class ScanSpectrum(Plan):
     sigPointRead: T.ClassVar[Signal] = Signal()
 
     def __attrs_post_init__(self):
-        super(ScanSpectrum, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         n_wl = len(self.wl_list)
         n_lines = self.cam.cam.channels
         self.wls = np.zeros((n_wl, n_lines))

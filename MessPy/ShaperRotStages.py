@@ -1,13 +1,12 @@
-from MessPy.Instruments.signal_processing import cm2THz, THz2cm
-from MessPy.Instruments.RotationStage import RotationStage
-from MessPy.Instruments.dac_px import AOM
-
 import attr
-from PySide6.QtCore import Qt, Slot
-from PySide6 import QtWidgets
-from MessPy.QtHelpers import ControlFactory, vlay, hlay
-
 from pyqtgraph.parametertree import Parameter, ParameterTree
+from PySide6 import QtWidgets
+from PySide6.QtCore import Qt, Slot
+
+from MessPy.Instruments.dac_px import AOM
+from MessPy.Instruments.RotationStage import RotationStage
+from MessPy.Instruments.signal_processing import THz2cm, cm2THz
+from MessPy.QtHelpers import ControlFactory, hlay, vlay
 
 dispersion_params = [
     dict(name="gvd", type="float", value=0),
@@ -27,7 +26,7 @@ class ShaperControl(QtWidgets.QWidget):
     folding_mirror_2: RotationStage | None = attr.ib()
 
     def __attrs_post_init__(self):
-        super(ShaperControl, self).__init__()
+        super().__init__()
         self.setWindowTitle("Shaper Controls")
         preset = [-1, -0.1, -0.01] + [0.01, 0.1, 1][::-1]
         rot_stages: list[RotationStage] = [self.rs1, self.rs2]
