@@ -4,7 +4,7 @@ from .ScanSpectrum import ScanSpectrum
 from .ScanSpectrumView import ScanSpectrumView, ScanSpectrumStarter
 from .ScanFoldingMirrors import ScanFoldingMirrors
 from .ScanFoldingMirrorsView import ScanFoldingMirrorView, ScanFoldingMirrorsStarter
-from .AlignmentHelper import AlignmentHelper
+from .AlignmentHelper import AlignmentHelper, SignalAlignmentHelper
 from .FocusScan import FocusScan
 from .FocusScanView import FocusScanView, FocusScanStarter
 from .GVDScan import GVDScan

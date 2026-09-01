@@ -152,8 +152,9 @@ class MainWindow(QMainWindow):
             plans += [("2D Measurement", "ei.graph", AOMTwoDStarter)]
 
             if self.controller.shaper.fm1 is not None:
-                plans += [("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)]
-       
+                plans += [
+                    ("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)
+                ]
 
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
@@ -177,6 +178,11 @@ class MainWindow(QMainWindow):
         alg_icon = qta.icon("fa5s.crosshairs")
         pp = QPushButton("Show alignment helper", icon=alg_icon)
         pp.clicked.connect(self.show_alignment_helper)
+        tb.addWidget(pp)
+
+        sig_alg_icon = qta.icon("fa5s.wave-square")
+        pp = QPushButton("Show signal alignment helper", icon=sig_alg_icon)
+        pp.clicked.connect(self.show_signal_alignment_helper)
         tb.addWidget(pp)
 
     @Slot(int)
@@ -210,6 +216,11 @@ class MainWindow(QMainWindow):
         self._ah.show()
         # dw = QDockWidget(self._ah)
         # self.addDockWidget(Qt.LeftDockWidgetArea, dw)
+
+    @Slot()
+    def show_signal_alignment_helper(self):
+        self._sah = SignalAlignmentHelper(self.controller)
+        self._sah.show()
 
     # def closeEvent(self, *args, **kwargs):
     #     self.toggle_run(False)
@@ -313,9 +324,10 @@ class CommandMenu(QWidget):
 
     def add_rot_stage(self, rs):
         rsi = ControlFactory(
-            "Angle", 
-            lambda x: rs.set_degrees(float(x)), 
-            format_str="%.1f deg", presets=[0, 45]
+            "Angle",
+            lambda x: rs.set_degrees(float(x)),
+            format_str="%.1f deg",
+            presets=[0, 45],
         )
         rsi.update_value(rs.get_degrees())
         rs.sigDegreesChanged.connect(rsi.update_value)
@@ -331,9 +343,11 @@ class CommandMenu(QWidget):
         from .ShaperRotStages import ShaperControl
 
         self.shaper_controls = ShaperControl(
-            sh.rot1, sh.rot2, sh, 
-            folding_mirror_1=getattr(sh, "fm1", None), 
-            folding_mirror_2=getattr(sh, "fm2", None)
+            sh.rot1,
+            sh.rot2,
+            sh,
+            folding_mirror_1=getattr(sh, "fm1", None),
+            folding_mirror_2=getattr(sh, "fm2", None),
         )
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)
@@ -498,12 +512,12 @@ def start_app():
     import traceback
 
     from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
-    GroupParameter.value = lambda self: self.opts.get('value', None)
+
+    GroupParameter.value = lambda self: self.opts.get("value", None)
     from pyqtgraph import mkQApp, setConfigOption
 
     setConfigOption("antialias", True)
     app = mkQApp()
-
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")
