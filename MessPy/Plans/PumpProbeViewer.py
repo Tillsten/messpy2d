@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from MessPy.Config import config
 from MessPy.ControlClasses import Controller
 from MessPy.Plans.PumpProbe import PumpProbeData, PumpProbePlan
 from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry
@@ -334,7 +333,6 @@ class PumpProbeStarter(PlanStartDialog):
 
         params = [sample_parameters, two_d]
         self.paras = Parameter.create(name="Pump Probe", type="group", children=params)
-        config.last_pump_probe = self.paras.saveState()
 
     def create_plan(self, controller: Controller):
         p = self.paras.child("Exp. Settings")

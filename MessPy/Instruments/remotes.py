@@ -3,19 +3,18 @@ from xmlrpc.client import ServerProxy
 import attr
 from wrapt import synchronized
 
-from MessPy.Config import config
 from MessPy.Instruments.interfaces import ILissajousScanner, IRotationStage, IShutter
 
-config.rot_server = 'http://130.133.30.223:8003'
-rot = ServerProxy(config.rot_server)
+ROT_SERVER_ADDR = "http://130.133.30.223:8003"
+rot = ServerProxy(ROT_SERVER_ADDR)
 
-config.shutter_server = 'http://130.133.30.223:8002'
-shutter = ServerProxy(config.shutter_server)
+SHUTTER_SERVER_ADDR = "http://130.133.30.223:8002"
+shutter = ServerProxy(SHUTTER_SERVER_ADDR)
 
 
 @attr.s
 class RotationStage(IRotationStage):
-    name = attr.ib('xmlrpc-RotStage')
+    name = attr.ib("xmlrpc-RotStage")
 
     @synchronized
     def set_degrees(self, deg: float):
@@ -35,7 +34,7 @@ class RotationStage(IRotationStage):
 
 @attr.s
 class Shutter(IShutter):
-    name = attr.ib('xmlrpc-Shutter')
+    name = attr.ib("xmlrpc-Shutter")
 
     @synchronized
     def is_open(self) -> bool:
@@ -47,13 +46,13 @@ class Shutter(IShutter):
         self.sigShutterToggled.emit(self.is_open())
 
 
-config.fh_server = 'http://130.133.30.223:8001'
-fh = ServerProxy(config.fh_server, allow_none=True)
+FH_SERVER_ADDR = "http://130.133.30.223:8001"
+fh = ServerProxy(FH_SERVER_ADDR, allow_none=True)
 
 
 @attr.s
 class Faulhaber(ILissajousScanner):
-    name = attr.ib('xmlrpc-SampleHoler')
+    name = attr.ib("xmlrpc-SampleHoler")
     pos_home = attr.ib()
     has_zaxis = True
 
@@ -104,17 +103,19 @@ class Faulhaber(ILissajousScanner):
     @synchronized
     def is_zmoving(self) -> bool:
         return fh.is_zmoving()
-#sh = Shutter()
 
 
-if __name__ == '__main__':
+# sh = Shutter()
+
+
+if __name__ == "__main__":
     sh = Faulhaber()
     print(sh.get_pos_mm())
     sh.set_pos_mm(10, 10)
     print(sh.pos_home)
-    #sh = Shutter()
+    # sh = Shutter()
     # sh.toggle()
-    #rs = RotationStage()
+    # rs = RotationStage()
     # print(rs.get_degrees())
     # rs.set_degrees(30)
     # print(rs.is_moving())
