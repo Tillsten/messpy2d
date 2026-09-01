@@ -8,7 +8,10 @@ config.testing = True
 
 
 @pytest.fixture
-def main_window(qtbot, tmp_path):
+def main_window(qtbot, tmp_path, monkeypatch):
+    # cleanup() calls config.save(), which would otherwise overwrite the
+    # user's real ~/.messpy/messpy_config.json with test data.
+    monkeypatch.setattr(config, "save", lambda *args, **kwargs: None)
     config.data_directory = tmp_path
     controller = Controller()
     controller.cam.set_shots(2)
