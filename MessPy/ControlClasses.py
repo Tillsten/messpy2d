@@ -2,26 +2,14 @@ import threading
 import time
 import typing as T
 
-
 import numpy as np
 from attr import Factory, attrib, attrs, define
 from loguru import logger
 from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
-
 import MessPy.Instruments.interfaces as I
 from MessPy.Config import config
-from MessPy.HwRegistry import (
-    _cam,
-    _cam2,
-    _dl,
-    _dl2,
-    _power_meter,
-    _rot_stage,
-    _sh,
-    _shaper,
-    _shutter,
-)
+from MessPy.HwRegistry import hw
 
 if T.TYPE_CHECKING:
     from MessPy.Plans.PlanBase import Plan
@@ -32,16 +20,20 @@ Reading = I.Reading
 
 @attrs(cmp=False, auto_attribs=True)
 class Cam(QObject):
-    cam: I.ICam = _cam
+    cam: I.ICam = hw.cam
 
     disp_wavelengths: bool = True
 
     shots: int = attrib(init=False)
 
-    last_read: T.Optional[I.Reading] = attrib(init=False)
+    last_read: I.Reading | None = attrib(init=False)
     wavelengths: np.ndarray = attrib(init=False)
     wavenumbers: np.ndarray = attrib(init=False)
     disp_axis: np.ndarray = attrib(init=False)
+    sig_lines: list[str] = attrib(init=False)
+    std_lines: list[str] = attrib(init=False)
+    name: str = attrib(init=False)
+    has_ref: bool = attrib(init=False)
 
     sigShotsChanged: T.ClassVar[Signal] = Signal(int)
     sigReadCompleted: T.ClassVar[Signal] = Signal()
@@ -158,10 +150,10 @@ class Cam(QObject):
 
 @define(auto_attribs=True, slots=False)
 class DelayLine(QObject):
-    _dl: I.IDelayLine = _dl
+    _dl: I.IDelayLine = hw.dl
     pos: float = 0
     moving: bool = False
-    _thread: T.Optional[object] = None
+    _thread: object | None = None
 
     sigPosChanged: T.ClassVar[Signal] = Signal(float)
 
@@ -184,7 +176,7 @@ class DelayLine(QObject):
             self.wait_and_update()
         else:
             logger.info("Waiting for delay line to finish moving")
-            while _dl.is_moving():
+            while self._dl.is_moving():
                 time.sleep(0.1)
             self.moving = False
         self.pos = self._dl.get_pos_fs()
@@ -221,15 +213,15 @@ class Controller(QObject):
     """Class which controls the main loop."""
 
     cam: Cam = attrib(init=False)
-    delay_line: DelayLine = Factory(lambda: DelayLine(_dl))
-    delay_line_second: T.Optional[DelayLine] = None
-    cam2: T.Optional[Cam] = attrib(init=False)
-    cam_list: T.List[Cam] = Factory(list)
-    shutter: T.List[I.IShutter] = _shutter
-    rot_stage: T.Optional[I.IRotationStage] = _rot_stage
-    sample_holder: T.Optional[I.ILissajousScanner] = _sh
-    shaper: T.Optional[object] = _shaper
-    power_meter: T.Optional[I.IPowerMeter] = _power_meter
+    delay_line: DelayLine = Factory(lambda: DelayLine(hw.dl))
+    delay_line_second: DelayLine | None = None
+    cam2: Cam | None = attrib(init=False)
+    cam_list: list[Cam] = Factory(list)
+    shutter: list[I.IShutter] = hw.shutter
+    rot_stage: I.IRotationStage | None = hw.rot_stage
+    sample_holder: I.ILissajousScanner | None = hw.sh
+    shaper: object | None = hw.shaper
+    power_meter: I.IPowerMeter | None = hw.power_meter
     plan: T.Optional["Plan"] = None
     pause_plan: bool = False
 
@@ -240,10 +232,10 @@ class Controller(QObject):
     def __attrs_post_init__(self):
         super().__init__()
         self.cam = Cam()
-        self.shutter = _shutter
+        self.shutter = hw.shutter
         self.cam_list = [self.cam]
-        if _cam2 is not None:
-            self.cam2 = Cam(_cam2)
+        if hw.cam2 is not None:
+            self.cam2 = Cam(hw.cam2)
             self.cam.sigShotsChanged.connect(self.cam2.set_shots)
             self.cam_list.append(self.cam2)
         else:
@@ -290,7 +282,7 @@ class Controller(QObject):
 
         elif hasattr(self.plan, "make_step"):
             try:
-                #print('make_step')
+                # print('make_step')
                 self.plan.make_step()
                 time.sleep(0.02)
             except StopIteration:

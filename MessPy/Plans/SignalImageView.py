@@ -1,13 +1,13 @@
 import numpy as np
 import pyqtgraph.parametertree as pt
-from pyqtgraph import ImageItem, PlotWidget, InfiniteLine, mkPen
-
-from PySide6.QtCore import Slot, Qt
-from PySide6.QtWidgets import QCheckBox, QWidget, QLabel, QSpinBox
+from pyqtgraph import ImageItem, InfiniteLine, PlotWidget, mkPen
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import QCheckBox, QLabel, QSpinBox, QWidget
 from qtawesome import icon
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import PlanStartDialog, vlay, hlay
+from MessPy.QtHelpers import PlanStartDialog, hlay, vlay
+
 from .SignalImagePlan import SignalImagePlan
 
 

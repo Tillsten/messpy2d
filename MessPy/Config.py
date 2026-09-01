@@ -1,40 +1,41 @@
-import pickle
-import os, platform
-from collections import defaultdict
-import attr
+import json
 from pathlib import Path
 
-p = Path.home() / ".messpy" / "messpy_config"
+import attr
+import cattrs
+from loguru import logger
+
+CONFIG_PATH = Path.home() / ".messpy" / "messpy_config.json"
+
+# JSON (not TOML) because exp_settings/last_results are arbitrary
+# pyqtgraph Parameter.saveState() blobs that may contain None, which
+# TOML cannot represent.
+converter = cattrs.Converter()
+converter.register_structure_hook(Path, lambda v, _: Path(v))
+converter.register_unstructure_hook(Path, str)
 
 
 @attr.s(auto_attribs=True)
 class Config:
-    exp_settings: dict = attr.Factory(lambda: defaultdict(dict))
-    conf_path: str = p
+    exp_settings: dict = attr.Factory(dict)
     data_directory: Path = Path("C:") / "results"
-    testing = False
+    testing: bool = False
     last_results: dict = attr.Factory(dict)
+    shots: int = 20
 
-    def save(self, fname=p):
-        with open(fname, "wb") as f:
-            pickle.dump(self, f)
+    def save(self, path: Path = CONFIG_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(converter.unstructure(self), indent=2))
 
     @classmethod
-    def load(cls, fname) -> "Config":
-        with open(fname, "rb") as f:
-            d = pickle.load(f)
-            return d
+    def load(cls, path: Path = CONFIG_PATH) -> "Config":
+        data = json.loads(path.read_text())
+        return converter.structure(data, cls)
 
 
 config = Config()
-config_available = os.path.exists(p)
-if config_available:
+if CONFIG_PATH.exists():
     try:
-        f = attr.asdict(Config.load(p))
-        for key, val in f.items():
-            setattr(config, key, val)
-    except (EOFError, IOError, AttributeError):
-        pass
-
-
-config.data_directory = Path("C:/") / "results"
+        config = Config.load()
+    except (OSError, json.JSONDecodeError, cattrs.ClassValidationError) as e:
+        logger.warning(f"Could not load config from {CONFIG_PATH}: {e}")

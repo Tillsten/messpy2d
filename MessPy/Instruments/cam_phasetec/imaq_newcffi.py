@@ -1,7 +1,7 @@
 import json
 import pathlib
 from threading import Lock
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import nidaqmx
 import nidaqmx.constants as c
@@ -225,7 +225,7 @@ class Cam:
         return fcount[0]
 
     def read_cam(
-        self, lines: Optional[list[tuple]] = None, back: Optional[np.ndarray] = None
+        self, lines: list[tuple] | None = None, back: np.ndarray | None = None
     ) -> tuple[np.ndarray, np.ndarray]:
         self.reading_lock.acquire()
         lib.imgSessionStartAcquisition(self.s)

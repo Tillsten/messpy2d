@@ -1,23 +1,24 @@
 import sys
+
 sys.path.append(r"C:\Users\MUELLER-WERKMEISTER\Downloads\download\messpy2d - Copy")
 sys.path.append(r"C:\Program Files\Thorlabs\Kinesis")
 
 
 import clr
+
 clr.AddReference("Thorlabs.MotionControl.Benchtop.BrushlessMotorCLI")
 clr.AddReference("Thorlabs.MotionControl.DeviceManagerCLI")
 
-from Thorlabs.MotionControl.DeviceManagerCLI import DeviceManagerCLI
-from Thorlabs.MotionControl.Benchtop.BrushlessMotorCLI import BenchtopBrushlessMotor
-from System import Decimal, Action, UInt64
-
-import attr
 import logging
-import wrapt
-from MessPy.Instruments.interfaces import IDelayLine
 from xmlrpc.client import ServerProxy
 
+import attr
+import wrapt
+from System import Action, Decimal, UInt64
+from Thorlabs.MotionControl.Benchtop.BrushlessMotorCLI import BenchtopBrushlessMotor
+from Thorlabs.MotionControl.DeviceManagerCLI import DeviceManagerCLI
 
+from MessPy.Instruments.interfaces import IDelayLine
 
 #config.dl_server = 'http://130.133.30.223:8000'
 

@@ -6,14 +6,13 @@ import multiprocessing
 import threading
 import time
 import typing
-import warnings
 import xmlrpc.server as rpc
 from pathlib import Path
 
 import attr
 import numpy as np
 from loguru import logger
-from PySide6.QtCore import QThread, Signal, QObject  # type: ignore
+from PySide6.QtCore import QObject, QThread, Signal  # type: ignore
 from scipy.constants import c
 
 from .signal_processing import Reading, Reading2D, Spectrum
@@ -123,7 +122,7 @@ class IDevice(QObject, metaclass=QABCMeta):
 class ISpectrograph(IDevice):
     changeable_wavelength: bool = False
     changeable_slit: bool = False
-    center_wl: typing.Optional[float] = None
+    center_wl: float | None = None
 
     sigWavelengthChanged: T.ClassVar[Signal] = Signal(float)
     sigSlitChanged: T.ClassVar[Signal] = Signal(float)
@@ -385,12 +384,12 @@ class ILissajousScanner(IDevice):
         pass
 
     @abc.abstractmethod
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         pass
 
     @abc.abstractmethod
     def set_pos_mm(
-        self, x: typing.Optional[float] = None, y: typing.Optional[float] = None
+        self, x: float | None = None, y: float | None = None
     ):
         pass
 
@@ -398,7 +397,7 @@ class ILissajousScanner(IDevice):
         pass
 
     @abc.abstractmethod
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         pass
 
     @abc.abstractmethod

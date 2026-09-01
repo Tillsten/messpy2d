@@ -1,9 +1,10 @@
-from typing import Literal
-from serial import Serial
-from loguru import logger
-from threading import Lock
-
 import time
+from threading import Lock
+from typing import Literal
+
+from loguru import logger
+from serial import Serial
+
 # Open serial port
 
 

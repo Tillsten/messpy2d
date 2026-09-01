@@ -2,9 +2,9 @@ import attr
 import lmfit
 import numpy as np
 import pyqtgraph.parametertree as pt
-from pyqtgraph import PlotItem, PlotWidget, TextItem, mkPen
+from pyqtgraph import PlotWidget, mkPen
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import QLabel, QMessageBox, QPushButton, QWidget, QComboBox
+from PySide6.QtWidgets import QComboBox, QLabel, QMessageBox, QPushButton, QWidget
 from scipy.special import erfc
 
 from MessPy.ControlClasses import Controller
@@ -58,7 +58,7 @@ class AdaptiveTZViewer(QWidget):
     fit_model_combo: QComboBox = attr.Factory(lambda: QComboBox())
 
     def __attrs_post_init__(self):
-        super(AdaptiveTZViewer, self).__init__()
+        super().__init__()
         self.plot_widget = PlotWidget(
             labels={"bottom": "Time [ps]", "left": self.plan.mode}
         )

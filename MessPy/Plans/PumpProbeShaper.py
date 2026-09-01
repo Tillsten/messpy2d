@@ -1,29 +1,17 @@
-import threading
+import concurrent.futures
+from collections.abc import Callable, Generator
 from typing import (
-    TYPE_CHECKING,
     ClassVar,
-    Callable,
-    Literal,
-    Generator,
-    Tuple,
-    Dict,
-    Optional,
 )
 
-import attr
 import numpy as np
 from attr import define, field
+from PySide6.QtCore import Signal
 
 from MessPy.ControlClasses import Controller
-from .PlanBase import Plan, ScanPlan
-import concurrent.futures
-
-if TYPE_CHECKING:
-    pass
 from MessPy.Instruments.dac_px import AOM
 
-from PySide6.QtCore import Signal
-import h5py
+from .PlanBase import Plan
 
 
 @define
@@ -37,7 +25,7 @@ class PumpProbeShaperPlan(Plan):
     is_stopping: bool = False
     plan_shorthand = "PPShaper"
     data: list[np.ndarray] = field(factory=list)
-    mean_sig: Optional[np.ndarray] = None
+    mean_sig: np.ndarray | None = None
     make_step: Callable = field()
     sigStepDone: ClassVar[Signal] = Signal()
 

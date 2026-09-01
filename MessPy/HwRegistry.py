@@ -1,160 +1,222 @@
 import platform
-import sys
+import typing as T
+
+import attr
 from loguru import logger
+from PySide6.QtWidgets import QApplication
 
 from MessPy.Config import config
-from MessPy.Instruments.mocks import (CamMock, DelayLineMock,
-    StageMock, PowerMeterMock)
-
-TESTING = config.testing
-_cam = None  # CamMock()
-_cam2 = None  # CamMock(name="Mock2")
-_dl = None
-_dl2 = None
-_rot_stage = None
-_shutter = []
-_sh = None
-_shaper = None
-_power_meter = None
-
-pc_name = platform.node()
-if len(sys.argv) > 1:
-    arg = sys.argv[1]
-else:
-    arg = "vis"
+from MessPy.Instruments.interfaces import (
+    ICam,
+    IDelayLine,
+    ILissajousScanner,
+    IPowerMeter,
+    IRotationStage,
+    IShutter,
+)
+from MessPy.Instruments.mocks import CamMock, DelayLineMock, PowerMeterMock, StageMock
 
 
-logger.info(f"Running on {pc_name}")
+def _move_to_main_thread(obj):
+    """Move a freshly constructed QObject to the GUI thread and return it, for inline use.
 
-if pc_name == "DESKTOP-RMRQA8D":
-    logger.info("Importing and initializing AvaSpec")
-    from MessPy.Instruments.cam_avaspec import AvaCam
+    Otherwise, since it was constructed in a worker thread, later cross-thread
+    signal delivery can silently fail.
+    """
+    app = QApplication.instance()
+    if app is not None:
+        obj.moveToThread(app.thread())
+    return obj
 
-  
-    from MessPy.Instruments.delay_dg535 import GeneratorDelayline, DGGShutter
-    _cam = AvaCam()
-    _cam2 = None
-    #from MessPy.Instruments.delay_line_apt import DelayLine
-    #_dl = DelayLine(name="VisDelay")
-    #from MessPy.Instruments.delay_line_newport import NewportDelay
-    _dl = GeneratorDelayline()
-    #_dl = NewportDelay('COM5', beam_passes=4, pos_sign=-1)
-    _shutter.append(DGGShutter(generator=_dl.generator, name='Gen Shutter'))
-    from MessPy.Instruments.rot_stage_thorlabs import TLRotStage
-    _rot_stage = TLRotStage("Polarizer")
-elif pc_name == "DESKTOP-BBLLUO7":
 
-    def init_pt():
-        logger.info("Importing and initializing PhaseTecCam")
-        try:
+def _guarded_init(description: str, fn):
+    """Run fn(), logging progress and adding context to any failure."""
+    logger.info(f"Importing and initializing {description}")
+    try:
+        fn()
+    except Exception:
+        logger.warning(f"{description} initialization failed")
+        raise
+
+
+def _run_init_steps(steps: dict[str, T.Callable[[], None]]):
+    """Run each step in its own thread and wait for all to finish.
+
+    Re-raises the first failure only after every step has completed. Polls
+    with a timeout (instead of blocking on as_completed) so the GUI thread
+    can keep pumping events -- e.g. to repaint a splash screen -- even
+    though the real Qt event loop hasn't started yet at this point.
+    """
+    from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+
+    app = QApplication.instance()
+    with ThreadPoolExecutor(max_workers=len(steps)) as ex:
+        futures = {
+            ex.submit(_guarded_init, name, fn): name for name, fn in steps.items()
+        }
+        pending = set(futures)
+        while pending:
+            done, pending = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
+            if app is not None:
+                app.processEvents()
+            for fut in done:
+                name = futures[fut]
+                try:
+                    fut.result()
+                    logger.info(f"Initialization function {name} finished successfully")
+                except Exception as e:
+                    logger.exception(
+                        f"Initialization function {name} raised an exception: {e}"
+                    )
+                    # re-raise so import errors aren't silently swallowed
+                    raise
+
+
+@attr.s(auto_attribs=True)
+class Hardware:
+    """Initializes and holds every instrument for the machine we're running on."""
+
+    cam: ICam | None = None
+    cam2: ICam | None = None
+    dl: IDelayLine | None = None
+    rot_stage: IRotationStage | None = None
+    shutter: list[IShutter] = attr.Factory(list)
+    sh: ILissajousScanner | None = None
+    shaper: object | None = None
+    power_meter: IPowerMeter | None = None
+
+    def __attrs_post_init__(self):
+        pc_name = platform.node()
+        logger.info(f"Running on {pc_name}")
+
+        if pc_name == "DESKTOP-RMRQA8D":
+            self._init_avaspec_rig()
+        elif pc_name == "DESKTOP-BBLLUO7":
+            self._init_phasetec_rig()
+        else:
+            logger.info("Unknown PC, using mocks")
+            self.cam = CamMock()
+            self.dl = DelayLineMock()
+            self.sh = StageMock()
+            self.power_meter = PowerMeterMock()
+
+        logger.info("HwRegistry initialized")
+
+    def _init_avaspec_rig(self):
+        def _init_cam():
+            from MessPy.Instruments.cam_avaspec import AvaCam
+
+            self.cam = _move_to_main_thread(AvaCam())
+
+        def _init_delay_and_shutter():
+            from MessPy.Instruments.delay_dg535 import DGGShutter, GeneratorDelayline
+
+            # from MessPy.Instruments.delay_line_apt import DelayLine
+            # self.dl = DelayLine(name="VisDelay")
+            # from MessPy.Instruments.delay_line_newport import NewportDelay
+            self.dl = _move_to_main_thread(GeneratorDelayline())
+            # self.dl = NewportDelay('COM5', beam_passes=4, pos_sign=-1)
+            self.shutter.append(
+                _move_to_main_thread(
+                    DGGShutter(generator=self.dl.generator, name="Gen Shutter")
+                )
+            )
+
+        def _init_rot_stage():
+            from MessPy.Instruments.rot_stage_thorlabs import TLRotStage
+
+            self.rot_stage = _move_to_main_thread(TLRotStage("Polarizer"))
+
+        _run_init_steps(
+            {
+                "AvaCam": _init_cam,
+                "GeneratorDelayline": _init_delay_and_shutter,
+                "Polarizer RotStage": _init_rot_stage,
+            }
+        )
+
+    def _init_phasetec_rig(self):
+        def _init_pt():
             from MessPy.Instruments.cam_phasetec import PhaseTecCam
 
-            global _cam
-            _cam = PhaseTecCam()
-            tmp_shots = _cam.shots
-            _cam.set_shots(10)
-            _cam.read_cam()
-            _cam.set_shots(tmp_shots)
+            self.cam = _move_to_main_thread(PhaseTecCam())
+            tmp_shots = self.cam.shots
+            self.cam.set_shots(10)
+            self.cam.read_cam()
+            self.cam.set_shots(tmp_shots)
+            # self.cam = CamMock()
 
-        except Exception as e:
-            logger.warning("PhaseTecCam import or testread failed")
-            raise e
-        # _cam = CamMock()
+        # from MessPy.Instruments.delay_line_apt import DelayLine
+        # self.dl = DelayLine(name="VisDelay")
+        # from MessPy.Instruments.delay_dg535 import GeneratorDelayline
 
-    # from MessPy.Instruments.delay_line_apt import DelayLine
-    # _dl = DelayLine(name="VisDelay")
-    # from MessPy.Instruments.delay_dg535 import GeneratorDelayline
+        # self.dl = GeneratorDelayline(port='COM10')
 
-    # _dl = GeneratorDelayline(port='COM10')
+        def _init_dl():
+            from MessPy.Instruments.delay_line_newport import NewportDelay
 
-    def init_dl():
-        logger.info("Importing and initializing NewportDelay")
-        from MessPy.Instruments.delay_line_newport import NewportDelay
+            self.dl = _move_to_main_thread(NewportDelay(name="IR Delay", pos_sign=-1))
 
-        global _dl
-        _dl = NewportDelay(name="IR Delay", pos_sign=-1)
-
-    def init_aom():
-        logger.info("Importing and initializing AOM")
-        from MessPy.Instruments.dac_px import AOM, AOMShutter
-
-        try:
-            global _shaper
-            _shaper = AOM(name="AOM")
-            aom_shutter = AOMShutter(aom=_shaper)
-            _shutter.append(aom_shutter)
-            logger.info("Importing and initializing RotationStage")
+        def _init_aom():
+            from MessPy.Instruments.dac_px import AOM, AOMShutter
             from MessPy.Instruments.RotationStage import RotationStage
 
-            r1 = RotationStage(name="Grating1", comport="COM5")
-            r2 = RotationStage(name="Grating2", comport="COM6")
-            _shaper.rot1 = r1
-            _shaper.rot2 = r2
-            f1 = RotationStage(name="Folding2", comport="COM9", offset=0)
-            f2 = RotationStage(name="Folding1", comport="COM4", offset=0)
-            _shaper.fm1 = f1
-            _shaper.fm2 = f2
-        except Exception as e:
-            logger.warning("Either AOM or Rotation Stage initalization failed")
-            _shaper = None
-            raise e
+            try:
+                self.shaper = _move_to_main_thread(AOM(name="AOM"))
+                self.shutter.append(_move_to_main_thread(AOMShutter(aom=self.shaper)))
+                self.shaper.rot1 = _move_to_main_thread(
+                    RotationStage(name="Grating1", comport="COM5")
+                )
+                self.shaper.rot2 = _move_to_main_thread(
+                    RotationStage(name="Grating2", comport="COM6")
+                )
+                self.shaper.fm1 = _move_to_main_thread(
+                    RotationStage(name="Folding2", comport="COM9", offset=0)
+                )
+                self.shaper.fm2 = _move_to_main_thread(
+                    RotationStage(name="Folding1", comport="COM4", offset=0)
+                )
+            except Exception:
+                self.shaper = None  # partial init isn't usable, drop it
+                raise
 
-    def init_topas_shutter():
-        logger.info("Importing and initializing TopasShutter")
-        try:
+        def _init_topas_shutter():
             from MessPy.Instruments.shutter_topas import TopasShutter
 
-            topas_shutter = TopasShutter()
-            _shutter.append(topas_shutter)
-        except ImportError as e:
-            logger.warning("TopasShutter import failed")
-            raise e
+            self.shutter.append(_move_to_main_thread(TopasShutter()))
 
-    # Use concurrent.futures to initialize hardware in parallel and
-    # propagate exceptions from worker functions.
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-    init_aom()
-    init_funcs = [init_pt, init_dl,  init_topas_shutter]
-    with ThreadPoolExecutor(max_workers=len(init_funcs)) as ex:
-        futures = {ex.submit(f): f.__name__ for f in init_funcs}
-        for fut in as_completed(futures):
-            name = futures[fut]
-            try:
-                fut.result()
-                logger.info(f"Initialization function {name} finished successfully")
-            except Exception as e:
-                logger.exception(
-                    f"Initialization function {name} raised an exception: {e}"
-                )
-                # re-raise so import errors aren't silently swallowed
-                raise
-    # logger.info("Importing and initializing PhidgetShutter")
-    # try:
-    #    from MessPy.Instruments.shutter_phidget import PhidgetShutter
+        _run_init_steps(
+            {
+                "AOM": _init_aom,
+                "PhaseTecCam": _init_pt,
+                "NewportDelay": _init_dl,
+                "TopasShutter": _init_topas_shutter,
+            }
+        )
+        # logger.info("Importing and initializing PhidgetShutter")
+        # try:
+        #    from MessPy.Instruments.shutter_phidget import PhidgetShutter
 
-    #    _shutter.append(PhidgetShutter())
-    # except ImportError:
-    #    logger.warning("PhidgetShutter import failed")
+        #    self.shutter.append(PhidgetShutter())
+        # except ImportError:
+        #    logger.warning("PhidgetShutter import failed")
 
-    # from MessPy.Instruments.stage_smartact import SmarActXYZ
+        # from MessPy.Instruments.stage_smartact import SmarActXYZ
 
-    # _sh = SmarActXYZ()
-    _power_meter = None
-    # try:
-    #    from MessPy.Instruments.cam_power import PowerCam
-    #    _power_meter = PowerCam()
-    # except:
-    #    _power_meter = None
-    # try:
-    #    from MessPy.Instruments.ophire import Starbright
-    #    _power_meter = Starbright()
-    # except:
-    # _power_meter = None
-else:
-    logger.info("Unknown PC, using mocks")
-    _cam = CamMock()
-    _dl = DelayLineMock()
-    _sh = StageMock()
-    _power_meter = PowerMeterMock()
+        # self.sh = SmarActXYZ()
+        self.power_meter = None
+        # try:
+        #    from MessPy.Instruments.cam_power import PowerCam
+        #    self.power_meter = PowerCam()
+        # except:
+        #    self.power_meter = None
+        # try:
+        #    from MessPy.Instruments.ophire import Starbright
+        #    self.power_meter = Starbright()
+        # except:
+        # self.power_meter = None
 
-logger.info("HwRegistry initialized")
+
+hw = Hardware()
+
+TESTING = config.testing

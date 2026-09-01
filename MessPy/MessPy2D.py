@@ -1,36 +1,35 @@
 from functools import partial
 
-
-from PySide6.QtCore import QTimer, Qt, Slot, QThread, QSettings
+import qtawesome as qta
+from loguru import logger
+from pyqtgraph import setConfigOptions
+from PySide6.QtCore import QSettings, Qt, QThread, QTimer, Slot
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
-    QMainWindow,
     QApplication,
-    QWidget,
-    QDockWidget,
-    QPushButton,
-    QLabel,
-    QSizePolicy,
-    QMessageBox,
-    QGroupBox,
     QCheckBox,
+    QDockWidget,
+    QGroupBox,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QSplashScreen,
+    QWidget,
 )
-import qtawesome as qta
-from pyqtgraph import setConfigOptions
 from qtpy.QtWidgets import QVBoxLayout
-from loguru import logger
 
 from MessPy.Config import config
 from MessPy.ControlClasses import Controller
 from MessPy.Instruments.interfaces import ICam
 from MessPy.Plans import *
-
 from MessPy.QtHelpers import (
     ControlFactory,
-    make_groupbox,
-    ValueLabels,
     ObserverPlotWithControls,
+    ValueLabels,
     hlay,
+    make_groupbox,
     vlay,
 )
 from MessPy.SampleMoveWidget import MoveWidget
@@ -46,7 +45,7 @@ setConfigOptions(
 
 class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
-        super(MainWindow, self).__init__()
+        super().__init__()
         self.setWindowTitle("Messpy-2D Edition")
         self.setWindowIcon(qta.icon("fa5s.play"))
         self.controller = controller  # controller
@@ -152,8 +151,9 @@ class MainWindow(QMainWindow):
             plans += [("2D Measurement", "ei.graph", AOMTwoDStarter)]
 
             if self.controller.shaper.fm1 is not None:
-                plans += [("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)]
-       
+                plans += [
+                    ("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)
+                ]
 
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
@@ -177,6 +177,11 @@ class MainWindow(QMainWindow):
         alg_icon = qta.icon("fa5s.crosshairs")
         pp = QPushButton("Show alignment helper", icon=alg_icon)
         pp.clicked.connect(self.show_alignment_helper)
+        tb.addWidget(pp)
+
+        sig_alg_icon = qta.icon("fa5s.wave-square")
+        pp = QPushButton("Show signal alignment helper", icon=sig_alg_icon)
+        pp.clicked.connect(self.show_signal_alignment_helper)
         tb.addWidget(pp)
 
     @Slot(int)
@@ -211,6 +216,11 @@ class MainWindow(QMainWindow):
         # dw = QDockWidget(self._ah)
         # self.addDockWidget(Qt.LeftDockWidgetArea, dw)
 
+    @Slot()
+    def show_signal_alignment_helper(self):
+        self._sah = SignalAlignmentHelper(self.controller)
+        self._sah.show()
+
     # def closeEvent(self, *args, **kwargs):
     #     self.toggle_run(False)
 
@@ -238,7 +248,7 @@ class MainWindow(QMainWindow):
 
 class CommandMenu(QWidget):
     def __init__(self, controller, main_window):
-        super(CommandMenu, self).__init__()
+        super().__init__()
         self.main_window = main_window
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._layout = QVBoxLayout(self)
@@ -313,9 +323,10 @@ class CommandMenu(QWidget):
 
     def add_rot_stage(self, rs):
         rsi = ControlFactory(
-            "Angle", 
-            lambda x: rs.set_degrees(float(x)), 
-            format_str="%.1f deg", presets=[0, 45]
+            "Angle",
+            lambda x: rs.set_degrees(float(x)),
+            format_str="%.1f deg",
+            presets=[0, 45],
         )
         rsi.update_value(rs.get_degrees())
         rs.sigDegreesChanged.connect(rsi.update_value)
@@ -331,19 +342,20 @@ class CommandMenu(QWidget):
         from .ShaperRotStages import ShaperControl
 
         self.shaper_controls = ShaperControl(
-            sh.rot1, sh.rot2, sh, 
-            folding_mirror_1=getattr(sh, "fm1", None), 
-            folding_mirror_2=getattr(sh, "fm2", None)
+            sh.rot1,
+            sh.rot2,
+            sh,
+            folding_mirror_1=getattr(sh, "fm1", None),
+            folding_mirror_2=getattr(sh, "fm2", None),
         )
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)
         self._layout.addWidget(but)
-        return
 
 
 class ShutterControls(QGroupBox):
     def __init__(self, c: Controller):
-        super(ShutterControls, self).__init__()
+        super().__init__()
         self.setTitle("Shutters")
         assert len(c.shutter) > 0
         w = []
@@ -357,7 +369,7 @@ class ShutterControls(QGroupBox):
 
 class CamControls(QGroupBox):
     def __init__(self, c: Controller):
-        super(CamControls, self).__init__()
+        super().__init__()
         # type: list[tuple[str, Callable, str]]
         bg_buttons = [("BG", c.cam.get_bg, "fa5.circle")]
         if hasattr(c.cam, "calibrate_ref"):
@@ -398,7 +410,7 @@ class SpectrometerControls(QGroupBox):
         cam : ICam
             The camera object to control, here we assume it has a spectrometer object.
         """
-        super(SpectrometerControls, self).__init__()
+        super().__init__()
         spec = cam.cam.spectrograph
 
         def calc_and_set_wl(s):
@@ -465,7 +477,7 @@ class DelayLineControl(QGroupBox):
     """
 
     def __init__(self, c: Controller):
-        super(DelayLineControl, self).__init__()
+        super().__init__()
         dl = c.delay_line
         dl1c = ControlFactory(
             "Delay 1",
@@ -493,17 +505,17 @@ class DelayLineControl(QGroupBox):
         self.setLayout(vlay(dls))
 
 
-def start_app():
+def start_app(splash: QSplashScreen | None = None):
     import sys
     import traceback
 
     from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
-    GroupParameter.value = lambda self: self.opts.get('value', None)
+
+    GroupParameter.value = lambda self: self.opts.get("value", None)
     from pyqtgraph import mkQApp, setConfigOption
 
     setConfigOption("antialias", True)
     app = mkQApp()
-
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")
@@ -531,4 +543,6 @@ def start_app():
 
     mw = MainWindow(Controller())
     mw.showMaximized()
+    if splash is not None:
+        splash.finish(mw)
     app.exec()

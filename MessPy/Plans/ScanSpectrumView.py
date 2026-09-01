@@ -1,17 +1,18 @@
-import pyqtgraph.parametertree.parameterTypes as pTypes
 import numpy as np
 import pyqtgraph.parametertree as pt
+import pyqtgraph.parametertree.parameterTypes as pTypes
 from PySide6.QtWidgets import QWidget
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import vlay, PlanStartDialog, ObserverPlot, make_entry
-from .ScanSpectrum import ScanSpectrum
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
+
 from .PlanBase import sample_parameters
+from .ScanSpectrum import ScanSpectrum
 
 
 class ScanSpectrumView(QWidget):
     def __init__(self, scan_plan: ScanSpectrum, *args, **kwargs):
-        super(ScanSpectrumView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         def get_probe():
             return scan_plan.probe[: scan_plan.wl_idx, 64]

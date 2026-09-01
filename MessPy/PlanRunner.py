@@ -1,7 +1,6 @@
-from typing import ClassVar, Literal, Optional
+from typing import ClassVar, Literal
 
-from attr import Factory, define
-from loguru import logger
+from attr import define
 from PySide6.QtCore import QObject, Signal, Slot
 
 from MessPy.Plans.PlanBase import Plan
@@ -9,7 +8,7 @@ from MessPy.Plans.PlanBase import Plan
 
 @define
 class PlanRunner(QObject):
-    plan: Optional[Plan] = None
+    plan: Plan | None = None
     state: Literal["running", "paused", "no_plan"] = "no_plan"
 
     sigPlanStopped: ClassVar[Signal] = Signal(bool)

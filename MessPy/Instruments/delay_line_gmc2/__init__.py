@@ -1,13 +1,15 @@
-import time
-import os.path as osp
 import ctypes as ct
-import cffi
+import os.path as osp
 import time
+
+import cffi
+
 #ct.WinDLL('PI_GCS_DLL_x64')
 
 #header = ''.join(open('PI_GCS2_DLL.h').readlines()[126:-3])
 p = osp.dirname(__file__)
 from pathlib import Path
+
 cur_dir = Path(p)
 if not Path(cur_dir/'C843_GCS_DLL_processed.h').exists():
     header = ''.join(open(p+'/C843_GCS_DLL.h').readlines()[104:299])

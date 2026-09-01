@@ -1,5 +1,7 @@
-import cppyy
 import logging
+
+import cppyy
+
 logger = logging.Logger("C843")
 cppyy.add_include_path(r"C:\Users\Public\PI\C-843\PI_Programming_Files_C843_GCS_DLL")
 cppyy.add_library_path(r"C:\Users\Public\PI\C-843\PI_Programming_Files_C843_GCS_DLL")
@@ -8,6 +10,7 @@ cppyy.include('C843_GCS_DLL.h')
 cppyy.load_library('C843_GCS_DLL_x64.dll')
 
 from ctypes import *
+
 g = cppyy.gbl
 dbl = (c_double*1)
 c_bool = (c_int * 1)

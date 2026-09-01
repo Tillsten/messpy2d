@@ -2,11 +2,11 @@ import concurrent
 import concurrent.futures
 from math import log
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional, Tuple
+from typing import ClassVar
 
 import attr
 import numpy as np
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal
 from scipy.stats import trim_mean
 
 from MessPy.Instruments.cam_phasetec.imaq_newcffi import Cam
@@ -40,7 +40,7 @@ row_defaults = {
 def _back_default():
     try:
         return np.load(Path(__file__).parent / "back.npy")
-    except IOError:
+    except OSError:
         return None
 
 
@@ -50,24 +50,24 @@ TWO_PROBES = True
 @attr.s(auto_attribs=True, kw_only=True)
 class PhaseTecCam(ICam):
     spectrograph: SP2150i = attr.Factory(SP2150i)
-    rows: Dict[str, Tuple[int, int]] = row_defaults
+    rows: dict[str, tuple[int, int]] = row_defaults
     name: str = "Phasetec Array"
     shots: int = 50
     has_ref: bool = True
 
-    line_names: List[str] = ["Probe1", "Probe2", "Ref", "max"]
-    std_names: List[str] = ["Probe1", "Probe2", "Ref", "Probe/Ref"]
-    sig_names: List[str] = ["SigNoRef", "Sig", "Sig2NoRef", "Sig2"]
+    line_names: list[str] = ["Probe1", "Probe2", "Ref", "max"]
+    std_names: list[str] = ["Probe1", "Probe2", "Ref", "Probe/Ref"]
+    sig_names: list[str] = ["SigNoRef", "Sig", "Sig2NoRef", "Sig2"]
 
-    beta1: Optional[np.ndarray] = None
-    beta2: Optional[np.ndarray] = None
+    beta1: np.ndarray | None = None
+    beta2: np.ndarray | None = None
     channels: int = 128
     ext_channels: int = 0
     changeable_wavelength: bool = True
     changeable_slit: bool = False
-    background: Optional[np.ndarray] = attr.Factory(_back_default)
+    background: np.ndarray | None = attr.Factory(_back_default)
     can_validate_pixel: bool = True
-    valid_pixel: Optional[dict[str, np.ndarray]] = None
+    valid_pixel: dict[str, np.ndarray] | None = None
     frame_channel: int = 0
     _cam: Cam = attr.ib(factory=Cam)
     darklevel: int = 0
@@ -116,7 +116,7 @@ class PhaseTecCam(ICam):
 
     def get_spectra(
         self, frames=None, **kwargs
-    ) -> Tuple[Dict[str, Spectrum], np.ndarray]:
+    ) -> tuple[dict[str, Spectrum], np.ndarray]:
 
         arr, ch = self._cam.read_cam(back=self.background, lines=self.rows)
 
@@ -206,7 +206,7 @@ class PhaseTecCam(ICam):
                 full_data=np.stack((probe.data, probe2.data, ref.data)),
                 shots=self.shots,
                 valid=True,
-            )  #
+            )
         return reading
 
     def make_2D_reading(
@@ -215,7 +215,7 @@ class PhaseTecCam(ICam):
         rot_frame: float,
         repetitions: int = 1,
         save_frames: bool = False,
-    ) -> tuple[Dict[str, Reading2D], Dict[str, Spectrum]]:
+    ) -> tuple[dict[str, Reading2D], dict[str, Spectrum]]:
         spectra, ch = self.get_spectra(frames=self.shots // repetitions, get_max=False)
 
         two_d_data = {}

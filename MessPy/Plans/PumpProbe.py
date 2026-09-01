@@ -1,19 +1,19 @@
-import threading, json
-from typing import Optional, List, Iterable, TYPE_CHECKING, Generator, ClassVar
+import json
+import threading
+from collections.abc import Generator
+from typing import TYPE_CHECKING, ClassVar, Optional
 
-from loguru import logger
 import numpy as np
 from attr import Factory, attrib, attrs
+from loguru import logger
 from numpy._typing import NDArray
-import h5py
-
 from PySide6.QtCore import QObject, Signal
 
 from .PlanBase import Plan
 
 if TYPE_CHECKING:
-    from MessPy.ControlClasses import Controller, Cam
-    from MessPy.Instruments.interfaces import ICam, IRotationStage, IShutter
+    from MessPy.ControlClasses import Cam, Controller
+    from MessPy.Instruments.interfaces import IShutter
 
 
 @attrs(auto_attribs=True)
@@ -28,12 +28,12 @@ class PumpProbePlan(Plan):
     rot_idx: int = 0
 
     plan_shorthand: str = "PumpProbe"
-    center_wl_list: List[List[float]] = [[0]]
+    center_wl_list: list[list[float]] = [[0]]
     pump_shutter: Optional["IShutter"] = None
-    cam_data: List["PumpProbeData"] = attrib(init=False)
+    cam_data: list["PumpProbeData"] = attrib(init=False)
     use_rot_stage: bool = False
-    rot_stage_angles: Optional[list] = None
-    rot_at_scan: List[float] = Factory(list)
+    rot_stage_angles: list | None = None
+    rot_at_scan: list[float] = Factory(list)
     time_per_scan: str = ""
     do_ref_calib: bool = True
     probe_shutter: Optional["IShutter"] = None
@@ -49,7 +49,7 @@ class PumpProbePlan(Plan):
             return np.lcm(*map(len, self.center_wl_list))
 
     def __attrs_post_init__(self):
-        super(PumpProbePlan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         gen = self.make_step_gen()
         self.make_step = lambda: next(gen)
         self.angle_cycle = []
@@ -191,18 +191,18 @@ class PumpProbeData(QObject):
 
     cam: "Cam"
     plan: PumpProbePlan
-    cwl: List[float] = attrib()
+    cwl: list[float] = attrib()
     t_list: np.ndarray
     scan: int = 0
     delay_scans: int = 0
     wl_idx: int = 0
     t_idx: int = 0
 
-    last_signal: Optional[np.ndarray] = None
-    mean_signal: Optional[np.ndarray] = None
+    last_signal: np.ndarray | None = None
+    mean_signal: np.ndarray | None = None
     current_scan: NDArray = attrib(init=False)
-    mean_scans: Optional[np.ndarray] = None
-    completed_scans: Optional[np.ndarray] = None
+    mean_scans: np.ndarray | None = None
+    completed_scans: np.ndarray | None = None
     wavelengths: np.ndarray = attrib(init=False)
     save_full_data: bool = False
 
@@ -210,7 +210,7 @@ class PumpProbeData(QObject):
     sigStepDone = Signal()
 
     def __attrs_post_init__(self):
-        super(PumpProbeData, self).__init__()
+        super().__init__()
         num_sig = self.cam.sig_lines
         num_wl = len(self.cwl)
         num_t = len(self.t_list)

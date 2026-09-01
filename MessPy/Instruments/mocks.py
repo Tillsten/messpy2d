@@ -1,20 +1,19 @@
-import typing
-from typing import Dict, Optional
+import time
 
-from PySide6.QtWidgets import QWidget
-import numpy as np
 import attr
+import numpy as np
+from PySide6.QtWidgets import QWidget
+
 from MessPy.Instruments.interfaces import (
     ICam,
     IDelayLine,
-    IRotationStage,
-    IShutter,
-    Reading,
-    ISpectrograph,
     ILissajousScanner,
     IPowerMeter,
+    IRotationStage,
+    IShutter,
+    ISpectrograph,
+    Reading,
 )
-import time
 
 
 @attr.s(auto_attribs=True)
@@ -65,7 +64,7 @@ class MockSpectrograph(ISpectrograph):
         return self.center_wl
 
     @property
-    def gratings(self) -> Dict[int, str]:
+    def gratings(self) -> dict[int, str]:
         return {0: "0", 1: "1"}
 
     def set_grating(self, idx: int):
@@ -85,11 +84,13 @@ class CamMock(ICam):
     std_names: list = ["Probe", "Ref", "Normed"]
     channels: int = 200
     ext_channels: int = 3
-    background: Optional[np.ndarray] = None
-    spectrograph: Optional[ISpectrograph] = attr.Factory(MockSpectrograph)
+    background: np.ndarray | None = None
+    spectrograph: ISpectrograph | None = attr.Factory(MockSpectrograph)
 
     noise_scale: float = 0.1
     peak_width: float = 20
+    peak_amp: float = 1000
+    peak_center: float = 250
 
     def get_state(self) -> dict:
         return {"shots": self.shots}
@@ -100,7 +101,9 @@ class CamMock(ICam):
     def read_cam(self):
         t0 = time.time()
         x = self.get_wavelength_array()
-        y = 300 * np.exp(-((x - 250) ** 2) / self.peak_width**2 / 2)
+        y = self.peak_amp * np.exp(
+            -((x - self.peak_center) ** 2) / self.peak_width**2 / 2
+        )
 
         knife_amp = state.knife_amp()
         y = y * (knife_amp / 4)
@@ -121,8 +124,12 @@ class CamMock(ICam):
             if state.t > 0
             else 0.1 * np.exp(state.t / 100)
         )
-        y_sig = 300 * np.exp(-((x - 250) ** 2) / 20**2 / 2)
-        y_sig -= 300 * np.exp(-((x - 310) ** 2) / 20**2 / 2)
+        y_sig = self.peak_amp * np.exp(
+            -((x - self.peak_center) ** 2) / self.peak_width**2 / 2
+        )
+        y_sig -= self.peak_amp * np.exp(
+            -((x - (self.peak_center + 60)) ** 2) / self.peak_width**2 / 2
+        )
         dist = np.sqrt(state.stage_pos[0] ** 2 + state.stage_pos[1] ** 2)
         y_sig *= np.exp(-dist / 0.5)
         a[::2, :] *= 1 + signal * y_sig / 300
@@ -235,7 +242,7 @@ class StageMock(ILissajousScanner):
     _pos: list[float] = [0, 0, 0]
     pos_home: tuple[float, float] = (0, 0)
 
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         return False, False
 
     def set_home(self):
@@ -251,7 +258,7 @@ class StageMock(ILissajousScanner):
     def is_zmoving(self) -> bool:
         return False
 
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         return tuple(state.stage_pos[:2])
 
     def set_pos_mm(self, x=None, y=None):

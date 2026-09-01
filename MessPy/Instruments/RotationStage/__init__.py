@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 04 19:06:42 2014
 
@@ -13,16 +12,16 @@ Created on Tue Jun 03 15:41:22 2014
 """
 
 
-from functools import cached_property
-from MessPy.Instruments.interfaces import IRotationStage
-from PySide6.QtCore import QObject, Signal, QTimer
-
-import serial
-import attr
 import time
+from functools import cached_property
 from threading import Lock
 
+import attr
+import serial
 from loguru import logger
+from PySide6.QtCore import QObject, QTimer, Signal
+
+from MessPy.Instruments.interfaces import IRotationStage
 
 try:
     rs.s.close()
@@ -69,12 +68,12 @@ class RotationStage(IRotationStage):
         return serial.Serial(self.comport, baudrate=115200 * 8, xonxoff=True, timeout=2)
 
     def __attrs_post_init__(self):
-        super(RotationStage, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         logger.info("Connecting %s"%(self.name))
         state = self.controller_state()        
         logger.info(f"Starting state: {state}")
         if state.startswith("DISABLE"):
-            logger.info(f"Enable")
+            logger.info("Enable")
             self.w("1MM1")
             
         elif state.startswith("NOT REFERENCED"):

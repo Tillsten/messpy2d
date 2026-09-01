@@ -1,18 +1,19 @@
-from xmlrpc.client import ServerProxy
-from MessPy.Config import config
-from MessPy.Instruments.interfaces import IDelayLine
-import wrapt
 import logging
+from xmlrpc.client import ServerProxy
+
 import attr
+import wrapt
 
-config.dl_server = 'http://130.133.30.223:8000'
+from MessPy.Instruments.interfaces import IDelayLine
 
-dlproxy = ServerProxy(config.dl_server)
+DL_SERVER_ADDR = "http://130.133.30.223:8000"
+
+dlproxy = ServerProxy(DL_SERVER_ADDR)
 
 
 @attr.s(auto_attribs=True)
 class DelayLine(IDelayLine):
-    name: str = f"Remote DelayLine xmlrpc {config.dl_server}"
+    name: str = f"Remote DelayLine xmlrpc {DL_SERVER_ADDR}"
     pos_sign: float = -1
     home_pos: float = dlproxy.get_home()
 
@@ -39,8 +40,7 @@ class DelayLine(IDelayLine):
 
 logging.info("Init xmlrpc delayline")
 _dl = DelayLine()
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     dl.is_moving()
     print(dlproxy.get_home(), dl.home_pos)
     dl.move_mm(5)

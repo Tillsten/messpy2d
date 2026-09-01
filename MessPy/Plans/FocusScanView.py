@@ -1,15 +1,14 @@
-from typing import Optional
+
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QPushButton
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QMessageBox, QPushButton, QTabWidget, QVBoxLayout, QWidget
+
+from MessPy.ControlClasses import Controller
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, hlay, make_entry, vlay
 
 from .FocusScan import FocusScan, Scan
-
-from PySide6.QtWidgets import QVBoxLayout, QMessageBox, QTabWidget
-from PySide6.QtCore import QTimer
-from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import vlay, hlay, PlanStartDialog, ObserverPlot, make_entry
 from .PlanBase import sample_parameters
 
 
@@ -26,7 +25,7 @@ class FocusScanView(QWidget):
             tabwidget.setLayout(vlay())
             tab.addTab(tabwidget, f"z = {z:.3f} mm")
             for axis in ["x", "y"]:
-                scan: Optional[Scan] = fsPlan.scans["%s_%d" % (axis, iz)]
+                scan: Scan | None = fsPlan.scans["%s_%d" % (axis, iz)]
                 print(scan)
                 if scan is not None:
                     plots = []
@@ -70,7 +69,7 @@ class FocusScanView(QWidget):
         pen = pg.mkPen(color="#e377c2", width=2)
         self.tabwidget.setCurrentIndex(i)
         for axis in ("x", "y"):
-            scan: Optional[Scan] = self.plan.scans["%s_%d" % (axis, i)]
+            scan: Scan | None = self.plan.scans["%s_%d" % (axis, i)]
             if scan is not None:
                 pr, ref, pw = scan.analyze()
                 probe_plot, ref_plot = (

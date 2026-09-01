@@ -1,11 +1,10 @@
+import sys
+import threading
 import time
+import typing
 
 import attr
-import sys
-import typing, threading
-
 import numpy as np
-
 from smaract import ctl
 
 from MessPy.Instruments.interfaces import ILissajousScanner
@@ -19,10 +18,10 @@ class SmarActXYZ(ILissajousScanner):
     has_zaxis: bool = True
 
     def __attrs_post_init__(self):
-        super(SmarActXYZ, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         buffer = ctl.FindDevices()
         if len(buffer) == 0:
-            raise IOError("MCS2 no devices found.")
+            raise OSError("MCS2 no devices found.")
         locators = buffer.split("\n")
         self.handle = ctl.Open(locators[0])
 
@@ -44,7 +43,7 @@ class SmarActXYZ(ILissajousScanner):
     def get_state(self):
         return dict(pos_home=self.pos_home)
 
-    def get_pos_mm_abs(self) -> typing.Tuple[float, float]:
+    def get_pos_mm_abs(self) -> tuple[float, float]:
         pos = []
         for c in ['x', 'y']:
             position = ctl.GetProperty_i64(
@@ -52,7 +51,7 @@ class SmarActXYZ(ILissajousScanner):
             pos.append(position * 1e-9)
         return tuple(pos)
 
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         x, y = self.get_pos_mm_abs()
         return x-self.pos_home[0], y-self.pos_home[1]
 
@@ -62,14 +61,14 @@ class SmarActXYZ(ILissajousScanner):
         if y is not None:
             ctl.Move(self.handle, self.channels['y'], round(y/1e-9), 0)
 
-    def set_pos_mm(self, x: typing.Optional[float]=None, y:typing.Optional[float]=None):
+    def set_pos_mm(self, x: float | None=None, y:float | None=None):
         if x is not None:
             x = x + self.pos_home[0]
         if y is not None:
             y += self.pos_home[1]
         self.set_pos_mm_abs(x, y)
 
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         state = ctl.GetProperty_i32(
             self.handle, self.channels['x'], ctl.Property.CHANNEL_STATE)
         x_moving = state & ctl.ChannelState.ACTIVELY_MOVING

@@ -1,10 +1,12 @@
 import numpy as np
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtCore, QtWidgets
+
 "Class implemting the IPowerMeter interface for the Starbright power meter"
+import sys
+
 import attr
 from serial import Serial
 
-import sys
 sys.path.append(r'C:\Users\Messknecht\PycharmProjects\messpy2d')
 from MessPy.Instruments.interfaces import IPowerMeter
 
@@ -31,8 +33,9 @@ class StarbrightUSB(IPowerMeter):
         super().__attrs_post_init__()
         # Use of Ophir COM object. 
 
-        import win32com.client
         import time
+
+        import win32com.client
 
 
         OphirCOM = win32com.client.Dispatch("OphirLMMeasurement.CoLMMeasurement")
@@ -47,7 +50,7 @@ class StarbrightUSB(IPowerMeter):
         self._handle = DeviceHandle# open first device
         exists = OphirCOM.IsSensorExists(DeviceHandle, 0)
         if exists:
-            print('\n----------Data for S/N {0} ---------------'.format(DeviceList[0]))
+            print(f'\n----------Data for S/N {DeviceList[0]} ---------------')
         # An Example for data retrieving
         OphirCOM.StartStream(DeviceHandle, 0)		# start measuring
         self._pm = OphirCOM
@@ -57,8 +60,10 @@ class StarbrightUSB(IPowerMeter):
         return data[0][-1]
 
 if __name__ == '__main__':
-    import pyqtgraph as pg
     import time
+
+    import pyqtgraph as pg
+
     from MessPy.Instruments.rot_stage_thorlabs import TLRotStage
     rot = TLRotStage("Pol")
     rot.get_degrees()

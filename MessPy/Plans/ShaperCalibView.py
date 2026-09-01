@@ -1,40 +1,40 @@
-from pyqtgraph import PlotWidget
-from PySide6.QtWidgets import (
-    QWidget,
-    QApplication,
-    QHBoxLayout,
-    QVBoxLayout,
-    QSpinBox,
-    QLabel,
-    QCheckBox,
-    QDialogButtonBox,
-    QSizePolicy,
-    QMessageBox,
-)
-from PySide6.QtCore import Signal, Slot
-from loguru import logger
-from pyqtgraph import TextItem, ScatterPlotItem
+from typing import ClassVar
+
 import attr
 import numpy as np
-from scipy.constants import c
-from scipy.signal import find_peaks
-from scipy.ndimage import gaussian_filter1d
-from typing import Optional, ClassVar
-from qtawesome import icon
+from loguru import logger
+from pyqtgraph import PlotWidget, ScatterPlotItem, TextItem
 from pyqtgraph.parametertree import Parameter, ParameterTree
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QSizePolicy,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+from qtawesome import icon
+from scipy.constants import c
+from scipy.ndimage import gaussian_filter1d
+from scipy.signal import find_peaks
 
 import MessPy.Instruments.interfaces as I
-from MessPy.Plans.ShaperCalibPlan import CalibPlan
-from MessPy.Plans.ShaperCalibAnalyzer import CalibView
 from MessPy.Config import config
 from MessPy.Instruments.dac_px import AOM
+from MessPy.Plans.ShaperCalibAnalyzer import CalibView
+from MessPy.Plans.ShaperCalibPlan import CalibPlan
 
 
 @attr.s(auto_attribs=True)
 class CalibScanView(QWidget):
     cam: I.ICam
     dac: AOM
-    plan: Optional[CalibPlan] = None
+    plan: CalibPlan | None = None
 
     sigPlanCreated: ClassVar[Signal] = Signal(object)
 
@@ -157,7 +157,7 @@ class CalibView2(QWidget):
     x: np.ndarray
     y_train: np.ndarray
     y_single: np.ndarray
-    y_full: Optional[np.ndarray] = None
+    y_full: np.ndarray | None = None
 
     single: int = 15
     width: int = 150
@@ -167,7 +167,7 @@ class CalibView2(QWidget):
     distance: int = 3
     filter: float = 0
 
-    coeff: Optional[np.ndarray] = None
+    coeff: np.ndarray | None = None
 
     sigCalibrationAccepted = Signal(object)
     sigCalibrationCanceled = Signal()

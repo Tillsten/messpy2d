@@ -1,7 +1,10 @@
-from MessPy.Instruments.interfaces import IDelayLine, IShutter
-from MessPy.Instruments.delay_dg535.delay_gen import DG535
-import attr
 import time
+
+import attr
+
+from MessPy.Instruments.delay_dg535.delay_gen import DG535
+from MessPy.Instruments.interfaces import IDelayLine, IShutter
+
 
 @attr.s(auto_attribs=True, kw_only=True)
 class GeneratorDelayline(IDelayLine):

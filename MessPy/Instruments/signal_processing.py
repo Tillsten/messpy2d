@@ -1,11 +1,12 @@
 import math
-from typing import Optional, Callable, Union, overload, Self
+from collections.abc import Callable
+from typing import Self, overload
 
 import attr
 import numpy as np
+from numba import njit, prange
 from numpy.typing import NDArray
 from scipy.constants import c
-from numba import njit, prange
 
 LOG10 = math.log(10)
 
@@ -43,7 +44,7 @@ def first(arr, val: float) -> int:
 
 
 def stats(probe, probe_max=None):
-    mean, std, mi, ma = fast_stats2d(probe.astype('float64')).T
+    mean, std, mi, ma = fast_stats2d(probe.astype("float64")).T
     probe_mean = mean
     probe_std = 100 * std / probe_mean
     if probe_max is not None:
@@ -144,12 +145,12 @@ class Spectrum:
     data: np.ndarray
     mean: np.ndarray
     std: np.ndarray
-    max: Optional[np.ndarray]
-    name: Optional[str] = None
-    frame_data: Optional[np.ndarray] = None
-    frames: Optional[int] = None
-    first_frame: Optional[int] = None
-    signal: Optional[np.ndarray] = None
+    max: np.ndarray | None
+    name: str | None = None
+    frame_data: np.ndarray | None = None
+    frames: int | None = None
+    first_frame: int | None = None
+    signal: np.ndarray | None = None
 
     @classmethod
     def create(
@@ -204,13 +205,13 @@ class Reading2D:
     spectra: Spectrum
     interferogram: np.ndarray
     t2_ps: np.ndarray
-    window: Optional[Callable] = np.hanning
+    window: Callable | None = np.hanning
     upsample: int = 2
     rot_frame: float = 0
     freqs: np.ndarray = attr.ib()
     signal_2D: np.ndarray = attr.ib()
-    frames: Optional[np.ndarray] = None
-    ref_frames: Optional[np.ndarray] = None
+    frames: np.ndarray | None = None
+    ref_frames: np.ndarray | None = None
 
     @classmethod
     def from_spectrum(
@@ -219,7 +220,7 @@ class Reading2D:
         t2_ps: np.ndarray,
         rot_frame: float,
         save_frame_enabled: bool,
-        ref_frames: Optional[np.ndarray] = None,
+        ref_frames: np.ndarray | None = None,
         **kwargs,
     ) -> "Reading2D":
         assert s.frame_data is not None
@@ -261,3 +262,37 @@ class Reading2D:
             win = self.window(a.shape[1] * 2)
             a = a * win[None, a.shape[1] :]
         return np.fft.rfft(a, a.shape[1] * self.upsample, 1).real
+
+
+def signal_type(pump_on: bool, probe_on: bool) -> int:
+    if pump_on and probe_on:
+        return 0
+    elif pump_on and not probe_on:
+        return 1
+    elif not pump_on and probe_on:
+        return 2
+    else:
+        return 3
+
+
+@njit(fastmath=True, cache=True)
+def four_cycle_signal(
+    arr: NDArray[np.float64], pump_on: NDArray[np.bool_], probe_on: NDArray[np.bool_]
+) -> float:
+    """
+    Used when chopping both the pump and probe. For a given 1-dimensional array
+    calculate the signal.
+    """
+    cur_window = np.zeros(4, dtype=np.float64)
+    for i in range(0, arr.shape[0], 4):
+        idx = signal_type(pump_on[i], probe_on[i])
+        cur_window[idx] = arr[i]
+
+    for i in range(4, arr.shape[0]):
+        idx = signal_type(pump_on[i], probe_on[i])
+        cur_window[idx] = arr[i]
+        both_on, both_off = cur_window[0], cur_window[3]
+        probe_only, pump_only = cur_window[2], cur_window[1]
+
+        unpumped = probe_only - both_off
+        pumped = both_on - pump_only
