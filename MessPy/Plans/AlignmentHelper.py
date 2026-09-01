@@ -1,13 +1,15 @@
-import pyqtgraph as pg
 import time
-from PySide6.QtWidgets import (
-    QWidget,
-    QCheckBox,
-)
-from PySide6.QtCore import Slot
-import MessPy.QtHelpers as qh
-from MessPy.ControlClasses import Controller, Cam
+
 import numpy as np
+import pyqtgraph as pg
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QWidget,
+)
+
+import MessPy.QtHelpers as qh
+from MessPy.ControlClasses import Cam, Controller
 
 
 class SignalAlignmentHelper(QWidget):

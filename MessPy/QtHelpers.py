@@ -1,38 +1,36 @@
-from typing import Protocol
-from abc import abstractmethod
 import datetime
 import math
 import typing as T
+from abc import abstractmethod
 from itertools import cycle
+from typing import Protocol
 
 import pyqtgraph as pg
 import pyqtgraph.parametertree as pt
-from pyqtgraph.parametertree import Parameter
-
 from pyqtgraph import PlotItem
-from PySide6.QtCore import Qt, Slot, QTimer, QObject, QSettings
-from PySide6.QtGui import QPalette, QColor, QIcon
+from pyqtgraph.parametertree import Parameter
+from PySide6.QtCore import QObject, QSettings, Qt, QTimer, Slot
+from PySide6.QtGui import QColor, QIcon, QPalette
 from PySide6.QtWidgets import (
-    QWidget,
-    QLineEdit,
-    QLabel,
-    QPushButton,
-    QHBoxLayout,
+    QCheckBox,
+    QDialog,
+    QErrorMessage,
     QFormLayout,
     QGroupBox,
-    QVBoxLayout,
-    QDialog,
-    QStyleFactory,
-    QListWidget,
-    QErrorMessage,
-    QSizePolicy,
-    QCheckBox,
+    QHBoxLayout,
+    QLabel,
     QLayout,
+    QLineEdit,
+    QListWidget,
+    QPushButton,
+    QSizePolicy,
+    QStyleFactory,
+    QVBoxLayout,
+    QWidget,
 )
-
+from qtawesome import icon
 
 from MessPy.Config import config
-from qtawesome import icon
 
 if T.TYPE_CHECKING:
     from MessPy.ControlClasses import Controller
@@ -93,7 +91,7 @@ dark_palette = make_palette()
 
 class LED(QWidget):
     def __init__(self, text, parent=None):
-        super(LED, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.led = QLabel("")
         self.color = "green"
         self.set_color(self.color)
@@ -158,7 +156,7 @@ class ControlFactory(QWidget):
         preset_rows=4,
         extra_buttons=None,
     ):
-        super(ControlFactory, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.setContentsMargins(0, 0, 0, 0)
         self.apply_button = QPushButton("Set")
         self.apply_fn = apply_fn
@@ -273,7 +271,7 @@ class PlanStartDialog(QDialog, metaclass=QProtocolMetaMeta):
     paras: pt.Parameter
 
     def __init__(self, controller: "Controller", *args, **kwargs):
-        super(PlanStartDialog, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.controller = controller
         self.setMinimumWidth(800)
         self.setMaximumHeight(800)
@@ -413,7 +411,7 @@ class ObserverPlot(pg.PlotWidget):
 
         All other kwargs are passed to PlotWidget.
         """
-        super(ObserverPlot, self).__init__(parent=parent, **kwargs)
+        super().__init__(parent=parent, **kwargs)
         signal.connect(self.request_update)
         self.linewidth = linewidth
         self.signal = signal
@@ -493,7 +491,7 @@ class ObserverPlotWithControls(QWidget):
     def __init__(
         self, names, obs, signal, plot_name: str, x=None, parent=None, **kwargs
     ):
-        super(ObserverPlotWithControls, self).__init__()
+        super().__init__()
         self.obs_plot = ObserverPlot(obs, signal, x, parent)
         line_controls = QWidget()
         line_controls.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -523,7 +521,7 @@ class ObserverPlotWithControls(QWidget):
 
 class ValueLabels(QWidget):
     def __init__(self, obs, fmt: str = "%.1f", parent=None):
-        super(ValueLabels, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         lay = QFormLayout()
         self.setStyleSheet("""
         QLabel { font-size: 14pt;}""")

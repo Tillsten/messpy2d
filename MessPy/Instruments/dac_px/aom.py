@@ -1,19 +1,18 @@
-from MessPy.Instruments.interfaces import IDevice
-from PySide6.QtCore import Signal, QMutex
-from loguru import logger
 from pathlib import Path
-from typing import Optional, Literal
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Literal
 
 import attr
 import numpy as np
+from loguru import logger
+from PySide6.QtCore import QMutex, Signal
 
 from MessPy.Instruments.dac_px.shaper_calculations import (
-    double_pulse_mask,
-    delay_scan_mask,
-    cm2THz,
     THz2cm,
+    cm2THz,
+    delay_scan_mask,
+    double_pulse_mask,
 )
+from MessPy.Instruments.interfaces import IDevice
 
 if TYPE_CHECKING:
     from MessPy.Instruments.dac_px.pxdac import PXDAC
@@ -36,18 +35,18 @@ class AOM(IDevice):
 
     amp_fac: float = 1.0
     wave_amp: float = 0.4
-    calib: Optional[np.ndarray] = None
-    nu: Optional[np.ndarray] = None
+    calib: np.ndarray | None = None
+    nu: np.ndarray | None = None
     nu0_THz: float = 55
     dac_freq_MHz: float = 1200
     rf_freq_MHz: float = 75
     pixel: np.ndarray = np.arange(PIXEL)
 
-    compensation_phase: Optional[np.ndarray] = None
-    compensation_amp: Optional[np.ndarray] = None
-    phase: Optional[np.ndarray] = np.zeros((PIXEL, 1))
+    compensation_phase: np.ndarray | None = None
+    compensation_amp: np.ndarray | None = None
+    phase: np.ndarray | None = np.zeros((PIXEL, 1))
     amp: np.ndarray = np.ones((PIXEL, 1))
-    total_phase: Optional[np.ndarray] = np.zeros(PIXEL)
+    total_phase: np.ndarray | None = np.zeros(PIXEL)
     mask: np.ndarray = np.zeros_like(PIXEL)
     is_running: bool = False
     phase_sign: float = 1
@@ -69,7 +68,7 @@ class AOM(IDevice):
     sigModeChanged = Signal(str)
 
     def __attrs_post_init__(self):
-        super(AOM, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         self.setup_dac()
 
     def get_state(self) -> dict:
@@ -91,7 +90,7 @@ class AOM(IDevice):
         return d
 
     def load_state(self):
-        super(AOM, self).load_state()
+        super().load_state()
 
         if self.calib:
             self.set_calib(self.calib)
@@ -199,7 +198,7 @@ class AOM(IDevice):
         rot_frame: float,
         rot_frame2: float,
         phase_frames: Literal[1, 2, 4] = 4,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the masks for creating a series a double pulses with phase cycling.
         """
@@ -232,7 +231,7 @@ class AOM(IDevice):
         return np.ones(PIXEL), mask
 
     def set_amp_and_phase(
-        self, amp: Optional[np.ndarray] = None, phase: Optional[np.ndarray] = None
+        self, amp: np.ndarray | None = None, phase: np.ndarray | None = None
     ):
         """
         Sets the amplitude and/or the phase of the spectral map.
@@ -426,7 +425,7 @@ if __name__ == "__main__":
     width = 40
     seperation = 400
     amp, phase = [], []
-    for i in Path("C:\PhaseTech\masks").glob("*"):
+    for i in Path(r"C:\PhaseTech\masks").glob("*"):
         d = np.loadtxt(i)
         amp.append(d[:, 0])
         phase.append(d[:, 1])

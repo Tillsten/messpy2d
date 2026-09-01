@@ -1,26 +1,21 @@
 import numpy as np
 import pyqtgraph.parametertree as pt
-import pyqtgraph.parametertree.parameterTypes as pTypes
-
 from pyqtgraph import PlotWidget, mkPen
-from PySide6.QtWidgets import QWidget, QLabel
+from PySide6.QtWidgets import QLabel, QWidget
 
 from MessPy.ControlClasses import Controller
 from MessPy.QtHelpers import (
-    ObserverPlot,
-    PlanStartDialog,
-    make_entry,
-    vlay,
     VEGA_COLORS,
+    PlanStartDialog,
+    vlay,
 )
-
 
 from .ScanFoldingMirrors import ScanFoldingMirrors
 
 
 class ScanFoldingMirrorView(QWidget):
     def __init__(self, scan_plan: ScanFoldingMirrors, *args, **kwargs):
-        super(ScanFoldingMirrorView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.plan = scan_plan
         self.info_label = QLabel()
         self.top_plot = PlotWidget()

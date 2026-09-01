@@ -5,6 +5,7 @@ Created on 27.07.2011
 '''
 import ctypes as C
 
+
 def Int_as_arg(function):
     function.argtypes = [C.c_int]
     

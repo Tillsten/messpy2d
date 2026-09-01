@@ -1,7 +1,7 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from pyqtgraph.parametertree import ParameterTree, Parameter
-
 from typing import TYPE_CHECKING
+
+from pyqtgraph.parametertree import Parameter, ParameterTree
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 if TYPE_CHECKING:
     from .mocks import MockCam

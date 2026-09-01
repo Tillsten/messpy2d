@@ -2,32 +2,29 @@ import attr
 import numpy as np
 import pyqtgraph.parametertree as pt
 from pyqtgraph import (
-    PlotWidget,
-    ImageItem,
-    PlotItem,
-    colormap,
     GraphicsLayoutWidget,
     HistogramLUTItem,
+    ImageItem,
     InfiniteLine,
-    mkPen,
     PlotDataItem,
-)
-from PySide6.QtWidgets import (
-    QWidget,
-    QLabel,
-    QTabWidget,
-    QVBoxLayout,
-    QCheckBox,
-    QRadioButton,
+    PlotItem,
+    colormap,
+    mkPen,
 )
 from PySide6.QtCore import Slot
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QRadioButton,
+    QVBoxLayout,
+    QWidget,
+)
+
 from ..ControlClasses import Controller
-from ..QtHelpers import vlay, PlanStartDialog, hlay, remove_nodes, make_entry, col
-from .PlanParameters import DelayParameter
-from ..QtHelpers import vlay, PlanStartDialog, hlay
+from ..Instruments.signal_processing import Spectrum, THz2cm
+from ..QtHelpers import PlanStartDialog, col, make_entry
 from .AOMTwoPlan import AOMTwoDPlan
 from .PlanBase import sample_parameters
-from ..Instruments.signal_processing import cm2THz, THz2cm, Spectrum
+from .PlanParameters import DelayParameter
 
 
 @attr.define(auto_attribs=True, weakref_slot=False)
@@ -271,8 +268,8 @@ class AOMTwoDStarter(PlanStartDialog):
 
 
 if __name__ == "__main__":
-    from PySide6.QtWidgets import QApplication
     from ControlClasses import Controller
+    from PySide6.QtWidgets import QApplication
 
     app = QApplication([])
     p = AOMTwoDPlan(controller=Controller(), shaper=None, t3_list=[1, 2])

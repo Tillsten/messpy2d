@@ -1,9 +1,11 @@
+import logging
 from xmlrpc.client import ServerProxy
+
+import attr
+import wrapt
+
 from MessPy.Config import config
 from MessPy.Instruments.interfaces import IDelayLine
-import wrapt
-import logging
-import attr
 
 config.dl_server = 'http://130.133.30.223:8000'
 

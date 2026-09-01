@@ -1,8 +1,9 @@
+import os
 import pickle
-import os, platform
 from collections import defaultdict
-import attr
 from pathlib import Path
+
+import attr
 
 p = Path.home() / ".messpy" / "messpy_config"
 
@@ -33,7 +34,7 @@ if config_available:
         f = attr.asdict(Config.load(p))
         for key, val in f.items():
             setattr(config, key, val)
-    except (EOFError, IOError, AttributeError):
+    except (OSError, EOFError, AttributeError):
         pass
 
 

@@ -1,4 +1,3 @@
-import asyncio
 from typing import ClassVar, Literal
 
 import attr

@@ -1,14 +1,9 @@
-import os
-from collections import defaultdict
-from typing import TYPE_CHECKING, List
 
 import attr
 import numpy as np
 import pyqtgraph as pg
-from loguru import logger
-from pyqtgraph.parametertree import Parameter, ParameterTree
+from pyqtgraph.parametertree import Parameter
 from PySide6.QtCore import Qt, QTimer, Slot
-from PySide6.QtGui import QFont, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -22,9 +17,9 @@ from PySide6.QtWidgets import (
 )
 
 from MessPy.Config import config
-from MessPy.ControlClasses import Cam, Controller
+from MessPy.ControlClasses import Controller
 from MessPy.Plans.PumpProbe import PumpProbeData, PumpProbePlan
-from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry
 
 from .PlanBase import sample_parameters
 from .PlanParameters import DelayParameter
@@ -32,7 +27,7 @@ from .PlanParameters import DelayParameter
 
 class LineLabel(QLabel):
     def __init__(self, line, index: int, parent=None):
-        super(LineLabel, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         assert isinstance(line, pg.InfiniteLine)
         line.sigPositionChanged.connect(self.update_label)
         self.line = line
@@ -71,7 +66,7 @@ class IndicatorLine:
 
 class PumpProbeViewer(QTabWidget):
     def __init__(self, pp_plan: PumpProbePlan, parent=None):
-        super(PumpProbeViewer, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         for ppd in pp_plan.cam_data:
             self.addTab(
                 PumpProbeDataViewer(ppd, pp_plan, parent=self), ppd.cam.cam.name
@@ -80,7 +75,7 @@ class PumpProbeViewer(QTabWidget):
 
 class PumpProbeDataViewer(QWidget):
     def __init__(self, pp_plan: PumpProbeData, pp: PumpProbePlan, parent=None):
-        super(PumpProbeDataViewer, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.pp = pp
         self.pp_plan = pp_plan
         self._layout = QHBoxLayout(self)
@@ -132,7 +127,7 @@ class PumpProbeDataViewer(QWidget):
         lw.addWidget(self.sig_plot)
         lw.addWidget(self.trans_plot)
 
-        self.inf_lines: List[List[IndicatorLine]] = [list() for i in pp_plan.cwl]
+        self.inf_lines: list[list[IndicatorLine]] = [list() for i in pp_plan.cwl]
 
         for i in [self.update_info, self.update_trans]:
             self.pp_plan.sigStepDone.connect(i)

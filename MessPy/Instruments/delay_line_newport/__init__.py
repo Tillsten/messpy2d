@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 04 19:06:42 2014
 
@@ -14,11 +13,12 @@ Created on Tue Jun 03 15:41:22 2014
 
 
 import time
+
 import attr
 import serial
-from PySide6.QtCore import QObject, Signal, QTimer, QMutex, QMutexLocker
-from MessPy.Instruments.interfaces import IDelayLine
+from PySide6.QtCore import QMutex, QMutexLocker, QObject, QTimer, Signal
 
+from MessPy.Instruments.interfaces import IDelayLine
 
 controller_states = {
     "0A": "NOT REFERENCED from reset",
@@ -108,7 +108,7 @@ class NewportDelay(IDelayLine):
         return rot
 
     def __attrs_post_init__(self):
-        super(NewportDelay, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         with QMutexLocker(self.lock):
             state = self.controller_state()
             if state.startswith("DISABLE"):

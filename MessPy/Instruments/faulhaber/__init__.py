@@ -1,17 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 Created on Tue Feb 18 17:18:17 2014
 
 @author: tillsten
 """
-from traits.api import *
-from traitsui.api import View, Item, Group
 from pyface.timer.api import Timer
+
 #import sfml
 from serial import Serial
+from traits.api import *
+from traitsui.api import Group, Item, View
 
 
-class SingleFaulhaber(object):
+class SingleFaulhaber:
     def __init__(self, comport, s2mm):
         self.ser = Serial(comport, baudrate=9600*12)
         self.ser.timeout = 0.1
@@ -27,11 +27,11 @@ class SingleFaulhaber(object):
         write(b'DEC30000\r')
 
     def set_vel(self, m1_vel=0):
-        cmd = 'v{0:d}\r'.format(m1_vel)
+        cmd = f'v{m1_vel:d}\r'
         self.ser.write(cmd.encode())
 
     def set_pos(self, pos, wait_for_move=True):
-        cmd = 'la{0:f}\r'.format(pos)
+        cmd = f'la{pos:f}\r'
         if wait_for_move:
             self.ser.write(b'NP\r')
         self.ser.write(cmd.encode())
@@ -86,7 +86,7 @@ class SingleFaulhaber(object):
     def motor_disable(self):
         self.ser.write(b'DI\r')
         
-class XYSingleFaulhaber(object):
+class XYSingleFaulhaber:
     def __init__(self):
         self.x_mot = SingleFaulhaber(s2mm=5e-5, comport='COM6')
         self.y_mot = SingleFaulhaber(s2mm=3.6e-5, comport='COM5')
@@ -141,7 +141,7 @@ class XYSingleFaulhaber(object):
         self.x_mot.motor_disable()
         self.y_mot.motor_disable()
         
-class Faulhaber(object):
+class Faulhaber:
     def __init__(self, comport=1):
         self.ser = Serial(comport, xonxoff=False, baudrate=12*9600)
         self.ser.timeout = 0.05
@@ -165,16 +165,16 @@ class Faulhaber(object):
         self.ser.write(b'2di\r')
 
     def set_vel(self, m1_vel=0, m2_vel=0):
-        cmd = '1v{0:d}\r2v{1:d}\r'.format(m1_vel, m2_vel)
+        cmd = f'1v{m1_vel:d}\r2v{m2_vel:d}\r'
         self.ser.write(cmd.encode())
         #self.ser.write('M\r')
 
     def set_pos(self, m1_pos=None, m2_pos=None, wait_for_move=True):
         cmd = ''
         if  m1_pos is not None:
-            cmd += '1la{0:.2f}\r'.format(m1_pos)
+            cmd += f'1la{m1_pos:.2f}\r'
         if  m2_pos is not None:
-            cmd += '2la{0:.2f}\r'.format(m2_pos)
+            cmd += f'2la{m2_pos:.2f}\r'
         #print cmd
         self.ser.write(cmd.encode())
         if wait_for_move:
@@ -403,9 +403,9 @@ if __name__ == '__main__':
     #fhc.moving = True
     #fhc.configure_traits()
     fh = XYSingleFaulhaber()
-    from time import time, sleep
+    from time import sleep, time
     t0 = time()
-    from math import cos, sin, pi
+    from math import cos, pi, sin
     x_amp = 5/2.
     y_amp = 3/2.
 

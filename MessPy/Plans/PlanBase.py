@@ -1,16 +1,17 @@
 
-from functools import cached_property
 import json
 import time
+from collections.abc import Callable, Generator
 from datetime import datetime, timedelta
+from functools import cached_property
 from pathlib import Path
-from typing import ClassVar, Tuple, Optional, Callable, Generator, Any
+from typing import ClassVar
 
-from loguru import logger
-import h5py
 import attr
-from PySide6.QtCore import QObject, Signal, Slot, QThread
+import h5py
+from loguru import logger
 from numpy import ndarray
+from PySide6.QtCore import QObject, Signal, Slot
 
 from MessPy.Config import config
 from MessPy.Instruments.interfaces import IDevice
@@ -36,16 +37,16 @@ class TimeTracker(QObject):
 
     start_time: float = attr.Factory(time.time)
     scan_start_time: float = 0
-    scan_end_time: Optional[float] = None
-    scan_duration: Optional[float] = None
+    scan_end_time: float | None = None
+    scan_duration: float | None = None
     point_start_time: float = 0
-    point_end_time: Optional[float] = None
-    point_duration: Optional[float] = None
+    point_end_time: float | None = None
+    point_duration: float | None = None
 
     sigTimesUpdated: ClassVar[Signal] = Signal(str)
 
     def __attrs_post_init__(self):
-        super(TimeTracker, self).__init__()
+        super().__init__()
 
     @property
     def total_duration(self):
@@ -99,18 +100,18 @@ class Plan(QObject):
     status: str = ""
     creation_dt: datetime = attr.Factory(datetime.now)
     time_tracker: TimeTracker = attr.Factory(TimeTracker)
-    file_name: Tuple[Path, Path] | None = None
+    file_name: tuple[Path, Path] | None = None
 
     sigPlanFinished: ClassVar[Signal] = Signal()
     sigPlanStarted: ClassVar[Signal] = Signal()
     sigPlanStopped: ClassVar[Signal] = Signal()
 
     def __attrs_post_init__(self):
-        super(Plan, self).__init__()
+        super().__init__()
         self.sigPlanFinished.connect(self.restore_state)
         self.get_file_name()  # check if name is valid
 
-    def get_file_name(self) -> Tuple[Path, Path]:
+    def get_file_name(self) -> tuple[Path, Path]:
         """Builds the filename and the metafilename"""
         if self.file_name is not None:
             return self.file_name
@@ -120,10 +121,10 @@ class Plan(QObject):
         name = f"{date_str} {self.plan_shorthand} {self.name}"
         p = Path(config.data_directory)
         if not p.exists():
-            raise IOError("Data path in config not existing")
+            raise OSError("Data path in config not existing")
         if (p / name).with_suffix(".json").exists():
             name = name + "_0"
-        logger.info(f"Generated the filepath {str(p / name)}")
+        logger.info(f"Generated the filepath {p / name!s}")
         return (p / name).with_suffix(".h5"), (p / name).with_suffix(".json")
 
     @property
@@ -194,7 +195,7 @@ class ScanPlan(Plan):
         return self.make_step_generator().__next__
 
     def __attrs_post_init__(self):
-        super(ScanPlan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         self.sigScanStarted.connect(self.time_tracker.scan_starting)
         self.sigScanFinished.connect(self.time_tracker.scan_ending)
 
@@ -227,7 +228,7 @@ class ScanPlan(Plan):
         yield True
 
 
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor
 
 
 @attr.s(auto_attribs=True, kw_only=True)

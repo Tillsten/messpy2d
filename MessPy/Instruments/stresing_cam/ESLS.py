@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """
 Created on Thu Feb 28 12:08:01 2019
 
 @author: localadmin
 """
 
-from nicelib import load_lib, NiceLib, Sig, NiceObject, RetHandler, ret_ignore
-import attr
-from typing import Tuple, List
-import numpy as np
-import time
 import threading
+import time
+
+import attr
+import numpy as np
 import scipy.stats as st
+from nicelib import NiceLib, NiceObject, Sig, load_lib
+
 from MessPy.Instruments.interfaces import ICam, Reading
-from wrapt import synchronized
 
 
 class ESLS(NiceLib):
@@ -93,15 +92,15 @@ drv = ESLS.CCDDrv(1)
 class Cam(ICam):
     name: str = "Stresing CCD"
     shots: int = 100
-    line_names: List[str] = ["Probe", "Pump"]
-    sig_names: List[str] = ["Probe"]
-    std_names: List[str] = ["Probe", "Pump"]
+    line_names: list[str] = ["Probe", "Pump"]
+    sig_names: list[str] = ["Probe"]
+    std_names: list[str] = ["Probe", "Pump"]
     ext_channels: int = 0
     channels: int = 390
     changeable_wavelength = False
     busy: bool = False
     read_idx: int = 0
-    last_read: np.ndarray = np.empty((0))
+    last_read: np.ndarray = np.empty(0)
     lock: threading.Lock = attr.Factory(threading.Lock)
 
     def __attrs_post_init__(self):
@@ -123,7 +122,7 @@ class Cam(ICam):
     def stop_ring_thread(self):
         ESLS.StopRingReadThread()
 
-    def read_ring(self) -> Tuple[np.ndarray]:
+    def read_ring(self) -> tuple[np.ndarray]:
         arr = np.zeros((self.shots, 2, 2400), dtype=np.uint32)
         while drv.ReadRingCounter() < self.shots:
             time.sleep(0.01)
@@ -212,9 +211,8 @@ if __name__ == "__main__":
 
     app = pg.mkQApp()
 
-    import PySide6.QtWidgets as qw
-
     import PySide6.QtCore as qtc
+    import PySide6.QtWidgets as qw
 
     win = qw.QWidget()
     lay = qw.QHBoxLayout(win)

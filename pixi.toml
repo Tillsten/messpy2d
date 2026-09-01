@@ -36,3 +36,4 @@ pythonnet = ">=3.1.0,<4"
 nicelib = ">=0.7.1, <0.8"
 nidaqmx = ">=1.0.0, <2"
 pyqtgraph = { git = "https://github.com/pyqtgraph/pyqtgraph" }
+ruff = ">=0.16.5, <0.17"

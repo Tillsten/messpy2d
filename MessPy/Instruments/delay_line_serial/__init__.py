@@ -1,7 +1,7 @@
-from __future__ import print_function
 import serial
 
-class DelayLine(object):
+
+class DelayLine:
     def __init__(self):
         port = 'COM10'
         self.port = serial.Serial(port, baudrate=9600*12, rtscts=True)

@@ -1,10 +1,10 @@
 import platform
 import sys
+
 from loguru import logger
 
 from MessPy.Config import config
-from MessPy.Instruments.mocks import (CamMock, DelayLineMock,
-    StageMock, PowerMeterMock)
+from MessPy.Instruments.mocks import CamMock, DelayLineMock, PowerMeterMock, StageMock
 
 TESTING = config.testing
 _cam = None  # CamMock()
@@ -29,9 +29,7 @@ logger.info(f"Running on {pc_name}")
 if pc_name == "DESKTOP-RMRQA8D":
     logger.info("Importing and initializing AvaSpec")
     from MessPy.Instruments.cam_avaspec import AvaCam
-
-  
-    from MessPy.Instruments.delay_dg535 import GeneratorDelayline, DGGShutter
+    from MessPy.Instruments.delay_dg535 import DGGShutter, GeneratorDelayline
     _cam = AvaCam()
     _cam2 = None
     #from MessPy.Instruments.delay_line_apt import DelayLine

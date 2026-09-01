@@ -1,23 +1,20 @@
-from typing import Dict
 
 import numpy as np
 import pyqtgraph.parametertree as pt
-
 from pyqtgraph import (
-    PlotWidget,
     ImageItem,
-    PlotCurveItem,
     LinearRegionItem,
-    mkBrush,
+    PlotCurveItem,
+    PlotWidget,
     colormap,
+    mkBrush,
 )
-from PySide6.QtCore import QTimer, QObject, Signal, QThread
+from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QApplication, QWidget
-
-from MessPy.QtHelpers import hlay, vlay
 
 # from imaq_nicelib import Cam
 from MessPy.Instruments.cam_phasetec import PhaseTecCam
+from MessPy.QtHelpers import hlay, vlay
 
 row_paras = {"type": "int", "step": 1, "min": 0, "max": 128, "readonly": True}
 params = [
@@ -54,7 +51,7 @@ class Worker(QObject):
     sigReadFinished = Signal()
 
     def __init__(self, cam: PhaseTecCam):
-        super(Worker, self).__init__()
+        super().__init__()
         self.cam = cam
         self.sigReadFinished.connect(self.read)
 
@@ -65,7 +62,7 @@ class Worker(QObject):
 
 class CamOptions(QWidget):
     def __init__(self, cam: PhaseTecCam, standalone=False, parent=None):
-        super(CamOptions, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.standalone = standalone
         self.cam = cam
         p = pt.Parameter.create(name="ADC Settings", type="group", children=params)
@@ -77,9 +74,9 @@ class CamOptions(QWidget):
         self.image = ImageItem()
         self.image.setLookupTable(lut)
         self.plotWidget.addItem(self.image)
-        self.regions: Dict[str, LinearRegionItem] = {}
-        self.mean_lines: Dict[str, PlotCurveItem] = {}
-        self.std_lines: Dict[str, PlotCurveItem] = {}
+        self.regions: dict[str, LinearRegionItem] = {}
+        self.mean_lines: dict[str, PlotCurveItem] = {}
+        self.std_lines: dict[str, PlotCurveItem] = {}
 
         self.cam_attrs = ["probe_rows", "probe2_rows", "ref_rows"]
 

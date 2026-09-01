@@ -1,13 +1,13 @@
+import lmfit
 import numpy as np
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QWidget
 from qtawesome import icon
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, vlay, make_entry
-from .GVDScan import GVDScan
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
 
-import lmfit
+from .GVDScan import GVDScan
 
 
 def gaussfit(x, y, offset=True):
@@ -29,7 +29,7 @@ def gaussfit(x, y, offset=True):
 
 class GVDScanView(QWidget):
     def __init__(self, gvd_plan: GVDScan, *args, **kwargs):
-        super(GVDScanView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.plan = gvd_plan
 
         self.gvd_amp = ObserverPlot(

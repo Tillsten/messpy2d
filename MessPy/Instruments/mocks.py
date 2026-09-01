@@ -1,20 +1,19 @@
-import typing
-from typing import Dict, Optional
+import time
 
-from PySide6.QtWidgets import QWidget
-import numpy as np
 import attr
+import numpy as np
+from PySide6.QtWidgets import QWidget
+
 from MessPy.Instruments.interfaces import (
     ICam,
     IDelayLine,
-    IRotationStage,
-    IShutter,
-    Reading,
-    ISpectrograph,
     ILissajousScanner,
     IPowerMeter,
+    IRotationStage,
+    IShutter,
+    ISpectrograph,
+    Reading,
 )
-import time
 
 
 @attr.s(auto_attribs=True)
@@ -65,7 +64,7 @@ class MockSpectrograph(ISpectrograph):
         return self.center_wl
 
     @property
-    def gratings(self) -> Dict[int, str]:
+    def gratings(self) -> dict[int, str]:
         return {0: "0", 1: "1"}
 
     def set_grating(self, idx: int):
@@ -85,8 +84,8 @@ class CamMock(ICam):
     std_names: list = ["Probe", "Ref", "Normed"]
     channels: int = 200
     ext_channels: int = 3
-    background: Optional[np.ndarray] = None
-    spectrograph: Optional[ISpectrograph] = attr.Factory(MockSpectrograph)
+    background: np.ndarray | None = None
+    spectrograph: ISpectrograph | None = attr.Factory(MockSpectrograph)
 
     noise_scale: float = 0.1
     peak_width: float = 20
@@ -235,7 +234,7 @@ class StageMock(ILissajousScanner):
     _pos: list[float] = [0, 0, 0]
     pos_home: tuple[float, float] = (0, 0)
 
-    def is_moving(self) -> typing.Tuple[bool, bool]:
+    def is_moving(self) -> tuple[bool, bool]:
         return False, False
 
     def set_home(self):
@@ -251,7 +250,7 @@ class StageMock(ILissajousScanner):
     def is_zmoving(self) -> bool:
         return False
 
-    def get_pos_mm(self) -> typing.Tuple[float, float]:
+    def get_pos_mm(self) -> tuple[float, float]:
         return tuple(state.stage_pos[:2])
 
     def set_pos_mm(self, x=None, y=None):

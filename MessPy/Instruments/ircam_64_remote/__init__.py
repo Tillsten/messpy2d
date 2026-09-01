@@ -1,12 +1,15 @@
 """Using the IR-ADC over network. Uses direct zmq messages."""
-import attr
+import xmlrpc.client
 from typing import List
+
+import attr
 import numpy as np
 import wrapt
-from MessPy.Instruments.interfaces import ICam, Reading
-from MessPy.Config import config
 import zmq
-import xmlrpc.client
+
+from MessPy.Config import config
+from MessPy.Instruments.interfaces import ICam, Reading
+
 config.ir_server_addr = 'tcp://130.133.30.146:5555'
 if config.ir_server_addr is None:
     config.ir_server_addr = 'tcp://130.133.30.146:5555'
@@ -23,9 +26,9 @@ triax = xmlrpc.client.ServerProxy(
 class Cam(ICam):
     name: str = 'Remote IR 32x2'
     shots: int = config.shots
-    line_names: List = ['Probe', 'Ref']
-    std_names: List = ['Probe', 'Ref', 'Probe/Ref']
-    sig_names: List = ['Probe/Ref']
+    line_names: list = ['Probe', 'Ref']
+    std_names: list = ['Probe', 'Ref', 'Probe/Ref']
+    sig_names: list = ['Probe/Ref']
     channels: int = 32
     ext_channels: int = 3
     changeable_wavelength: bool = True

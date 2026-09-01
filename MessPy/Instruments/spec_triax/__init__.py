@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """
 Created on Thu Aug 15 17:40:25 2013
 
 @author: tillsten
 """
 
-from __future__ import print_function
-import serial
 import time
+
 import numpy as np
+import serial
 
 DEBUG = True
 
 
-class TriaxSpectrometer(object):
+class TriaxSpectrometer:
     step_slit = 2
 
     def __init__(self, com_port='COM2'):
@@ -29,7 +28,7 @@ class TriaxSpectrometer(object):
         try:
             if len(out) == 0:
                 print("Can't connect to Triax Spectrometer")
-                raise IOError
+                raise OSError
 
             if out == b'B':
 
@@ -37,32 +36,32 @@ class TriaxSpectrometer(object):
                 out = port.read(1)
                 if len(out) == 0 or out == b'F':
                     print("Can't connect to Triax Spectrometer")
-                    raise IOError
+                    raise OSError
 
                 self.write(" ")
 
                 out = port.read(1)
                 if len(out) == 0 or out == b'F':
                     print("Can't connect to Triax Spectrometer")
-                    raise IOError
+                    raise OSError
 
                 self.write("A")
 
                 out = port.read(1)
                 if out != b'o':
                     print("Init of Triax Spectrometer failed")
-                    raise IOError
+                    raise OSError
 
                 self.write("i,0,0,0\r")
                 out = port.read(1)
                 if out != b'o':
                     print("Init of Triax Spectrometer failed")
-                    raise IOError
+                    raise OSError
 
             #self.motor_init()
             self.get_wl()
             self.get_slit()
-        except (IOError, OSError):
+        except OSError:
             self.port.close()
             raise
 
@@ -88,7 +87,7 @@ class TriaxSpectrometer(object):
         self.write("Z61,1," + str(round(wl, 2)) + "\r")
         if port.read(1) != b"o":
             print("Setting wl failed")
-            raise IOError
+            raise OSError
 
         out = "q"
         while out == "q":
@@ -119,7 +118,7 @@ class TriaxSpectrometer(object):
             print(out, port.read(1))
 
             print("Getting wl failed")
-            raise IOError
+            raise OSError
 
     def read_until(self, terminator=b'\r'):
         ans = self.port.read_until()
@@ -134,7 +133,7 @@ class TriaxSpectrometer(object):
         print(out)
         if out != b"o":
             print("Getting slitpos failed")
-            raise IOError
+            raise OSError
         else:
             out = self.read_until()
             print('readallslit', out)
@@ -150,7 +149,7 @@ class TriaxSpectrometer(object):
         self.write("k0,0," + str(change) + "\r")
         if port.read(1) != b"o":
             print("Setting slit failed")
-            raise IOError
+            raise OSError
 
         out = b'q'
         while out == b"q":
@@ -170,7 +169,7 @@ class TriaxSpectrometer(object):
         Gamma = 15 / 180. * 3.1415
         f = 193.  #193
         spacing = 0.6  #0.6
-        d = 1 / self.lines_grating * 1000000  #
+        d = 1 / self.lines_grating * 1000000
         cwl = wl
         Dispersion = spacing * (np.sqrt(d * d * np.cos(Gamma)**2 - cwl**2 / 4.)
                                 - np.tan(Gamma) * cwl / 2.) / f

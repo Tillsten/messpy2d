@@ -1,14 +1,14 @@
 import time
 from threading import Lock
-import attr
-import numpy as np
-
-from PySide6.QtCore import Signal, QObject
 from typing import Optional
 
-from MessPy.Instruments.interfaces import ICam, T
-from MessPy.Instruments.signal_processing import Spectrum, Reading
+import attr
+import numpy as np
+from PySide6.QtCore import QObject, Signal
+
 from MessPy.Instruments.cam_avaspec.avaspec import AvantesSpec
+from MessPy.Instruments.interfaces import ICam, T
+from MessPy.Instruments.signal_processing import Reading, Spectrum
 
 if T.TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
@@ -53,7 +53,7 @@ class AvaCam(ICam):
     _spec: AvantesSpec = attr.field(factory=AvantesSpec.take_nth)
 
     def __attrs_post_init__(self):
-        super(AvaCam, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         if self.background is not None:
             self.background = np.array(self.background)
 
@@ -67,7 +67,7 @@ class AvaCam(ICam):
                        valid=True)
 
     def get_spectra(
-        self, frames: Optional[int] = None
+        self, frames: int | None = None
     ) -> T.Tuple[T.Dict[str, Spectrum], T.Any]:
         # print('Starting', self.shots)
         s = self._spec
@@ -145,6 +145,7 @@ class AvaCam(ICam):
 
 
 import PySide6.QtWidgets as qtw
+
 
 @attr.dataclass
 class AvacamSetting(qtw.QWidget):

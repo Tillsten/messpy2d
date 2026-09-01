@@ -1,5 +1,4 @@
 import typing as T
-from pathlib import Path
 
 import attr
 import numpy as np
@@ -22,7 +21,7 @@ class FastGVDScan(Plan):
 
     cam: Cam
     aom: AOM
-    gvd_list: T.List[float]
+    gvd_list: list[float]
     gvd_idx: int = 0
     scan_mode: T.Literal["GVD", "TOD", "FOD"] = "GVD"
     gvd: float = 0
@@ -30,7 +29,7 @@ class FastGVDScan(Plan):
     fod: float = 0
     repeats: int = 20
     iter: int = 0
-    observed_channel: T.Optional[int] = None
+    observed_channel: int | None = None
     settings_before: dict = attr.Factory(dict)
 
     sigPointRead: T.ClassVar[Signal] = Signal()
@@ -38,7 +37,7 @@ class FastGVDScan(Plan):
     plan_shorthand: T.ClassVar[str] = "FastGVDscan"
 
     def __attrs_post_init__(self):
-        super(FastGVDScan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         n_disp = len(self.gvd_list)
         n_pix = self.cam.channels
         if self.aom.calib is None:

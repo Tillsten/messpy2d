@@ -1,7 +1,7 @@
 from typing import Union
 
-from scipy.constants import c
 import numpy as np
+from scipy.constants import c
 
 f = Union[float, np.ndarray]
 

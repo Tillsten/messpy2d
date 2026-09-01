@@ -1,6 +1,6 @@
-import time
 import os
 import sys
+import time
 from ctypes import *
 from typing import Optional
 
@@ -41,7 +41,7 @@ class ThorlabsKDC101:
         self.polling_rate = polling_rate
         self.use_simulation = use_simulation
 
-        self.lib: Optional[CDLL] = None
+        self.lib: CDLL | None = None
         self.is_connected = False
         self.is_homed = False
 
@@ -240,8 +240,9 @@ def main():
     # stage.disconnect()
 
 
-from MessPy.Instruments.interfaces import IRotationStage
 from attr import dataclass
+
+from MessPy.Instruments.interfaces import IRotationStage
 
 
 @dataclass

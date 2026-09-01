@@ -1,5 +1,8 @@
-import serial, time, json
+import json
+import time
 from pathlib import Path
+
+import serial
 
 DIR = Path(__file__).parent
 

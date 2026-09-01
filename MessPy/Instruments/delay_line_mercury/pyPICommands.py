@@ -4,10 +4,11 @@ Created on 22.07.2011
 @author: cwu
 '''
 import ctypes as C
+
 from . import Prototypes as prot
 
 
-class pyPICommands(object):
+class pyPICommands:
     '''
     classdocs
     '''
@@ -31,7 +32,7 @@ class pyPICommands(object):
         try:
             self.dllhandle = C.windll.LoadLibrary(dllname)
             self.dll_loaded = True
-        except WindowsError:
+        except OSError:
             print('Could not load', dllname)
 
         self.__ID = -1
@@ -99,7 +100,7 @@ class pyPICommands(object):
             if (cmd in self.__loadedfunctions):
                 self.__loadedfunctions[cmd]['Prototyper'](func)
             self.__loadedfunctions[cmd] = func
-        except WindowsError:
+        except OSError:
             print('failed to load', cmd)
             self.__loadedfunctions[cmd]['failedtoload'] = True
 
