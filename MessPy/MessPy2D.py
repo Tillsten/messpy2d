@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSizePolicy,
+    QSplashScreen,
     QWidget,
 )
 from qtpy.QtWidgets import QVBoxLayout
@@ -504,7 +505,7 @@ class DelayLineControl(QGroupBox):
         self.setLayout(vlay(dls))
 
 
-def start_app():
+def start_app(splash: QSplashScreen | None = None):
     import sys
     import traceback
 
@@ -542,4 +543,6 @@ def start_app():
 
     mw = MainWindow(Controller())
     mw.showMaximized()
+    if splash is not None:
+        splash.finish(mw)
     app.exec()

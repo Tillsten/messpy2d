@@ -9,16 +9,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 import MessPy.Instruments.interfaces as I
 from MessPy.Config import config
-from MessPy.HwRegistry import (
-    _cam,
-    _cam2,
-    _dl,
-    _power_meter,
-    _rot_stage,
-    _sh,
-    _shaper,
-    _shutter,
-)
+from MessPy.HwRegistry import hw
 
 if T.TYPE_CHECKING:
     from MessPy.Plans.PlanBase import Plan
@@ -29,7 +20,7 @@ Reading = I.Reading
 
 @attrs(cmp=False, auto_attribs=True)
 class Cam(QObject):
-    cam: I.ICam = _cam
+    cam: I.ICam = hw.cam
 
     disp_wavelengths: bool = True
 
@@ -159,7 +150,7 @@ class Cam(QObject):
 
 @define(auto_attribs=True, slots=False)
 class DelayLine(QObject):
-    _dl: I.IDelayLine = _dl
+    _dl: I.IDelayLine = hw.dl
     pos: float = 0
     moving: bool = False
     _thread: object | None = None
@@ -185,7 +176,7 @@ class DelayLine(QObject):
             self.wait_and_update()
         else:
             logger.info("Waiting for delay line to finish moving")
-            while _dl.is_moving():
+            while self._dl.is_moving():
                 time.sleep(0.1)
             self.moving = False
         self.pos = self._dl.get_pos_fs()
@@ -222,15 +213,15 @@ class Controller(QObject):
     """Class which controls the main loop."""
 
     cam: Cam = attrib(init=False)
-    delay_line: DelayLine = Factory(lambda: DelayLine(_dl))
+    delay_line: DelayLine = Factory(lambda: DelayLine(hw.dl))
     delay_line_second: DelayLine | None = None
     cam2: Cam | None = attrib(init=False)
     cam_list: list[Cam] = Factory(list)
-    shutter: list[I.IShutter] = _shutter
-    rot_stage: I.IRotationStage | None = _rot_stage
-    sample_holder: I.ILissajousScanner | None = _sh
-    shaper: object | None = _shaper
-    power_meter: I.IPowerMeter | None = _power_meter
+    shutter: list[I.IShutter] = hw.shutter
+    rot_stage: I.IRotationStage | None = hw.rot_stage
+    sample_holder: I.ILissajousScanner | None = hw.sh
+    shaper: object | None = hw.shaper
+    power_meter: I.IPowerMeter | None = hw.power_meter
     plan: T.Optional["Plan"] = None
     pause_plan: bool = False
 
@@ -241,10 +232,10 @@ class Controller(QObject):
     def __attrs_post_init__(self):
         super().__init__()
         self.cam = Cam()
-        self.shutter = _shutter
+        self.shutter = hw.shutter
         self.cam_list = [self.cam]
-        if _cam2 is not None:
-            self.cam2 = Cam(_cam2)
+        if hw.cam2 is not None:
+            self.cam2 = Cam(hw.cam2)
             self.cam.sigShotsChanged.connect(self.cam2.set_shots)
             self.cam_list.append(self.cam2)
         else:
