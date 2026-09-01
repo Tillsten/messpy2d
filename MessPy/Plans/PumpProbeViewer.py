@@ -1,4 +1,3 @@
-
 import attr
 import numpy as np
 import pyqtgraph as pg
@@ -157,14 +156,19 @@ class PumpProbeDataViewer(QWidget):
         self.inf_lines[self.pp_plan.wl_idx].append(il)
         l.sigPositionChanged.connect(self.update_trans)
 
-        def remove_line(ev):
-            lbl.deleteLater()
-            self.sig_plot.plotItem.removeItem(l)
-            self.trans_plot.plotItem.removeItem(tl)
-            self.trans_plot.plotItem.removeItem(tlh)
-            self.inf_lines[il.wl_idx].remove(il)
+        lbl.mouseReleaseEvent = lambda ev: self._remove_indicator_line(il)
 
-        lbl.mouseReleaseEvent = remove_line
+    def _remove_indicator_line(self, il: "IndicatorLine"):
+        """Undo everything `handle_sig_click` set up for a single indicator line."""
+        il.entry_label.deleteLater()
+        self.sig_plot.plotItem.removeItem(il.line)
+        self.trans_plot.plotItem.removeItem(il.trans_line)
+        self.trans_plot.plotItem.removeItem(il.hist_trans_line)
+        self.inf_lines[il.wl_idx].remove(il)
+
+    def _all_indicator_lines(self) -> list["IndicatorLine"]:
+        """Flat list of indicator lines across all center wavelengths."""
+        return [line for lines in self.inf_lines for line in lines]
 
     @Slot()
     def update_info(self):
@@ -192,39 +196,27 @@ class PumpProbeDataViewer(QWidget):
         self.info_label.setText(s)
 
     def handle_wl_change(self):
-        last_idx = self.pp_plan.wl_idx - 1
+        """Show only the indicator lines belonging to the newly selected wavelength."""
+        previous_idx = self.pp_plan.wl_idx - 1
+        for line in self.inf_lines[previous_idx]:
+            line.trans_line.hide()
+            line.line.hide()
+        for line in self.inf_lines[self.pp_plan.wl_idx]:
+            line.trans_line.show()
+            line.line.show()
 
-        for i in self.inf_lines[last_idx]:
-            self.trans_plot.removeItem(i.trans_line)
-            i.line.hide()
-        for i in self.inf_lines[self.pp_plan.wl_idx]:
-            self.trans_plot.addItem(i.trans_line)
+    def _set_lines_visible(self, visible: bool, item_attr: str):
+        """Show/hide `item_attr` (e.g. "trans_line") of every indicator line."""
+        for line in self._all_indicator_lines():
+            getattr(line, item_attr).setVisible(visible)
 
-            i.line.show()
+    def hide_history_lines(self, _state=None):
+        self._set_lines_visible(self.do_show_mean.isChecked(), "hist_trans_line")
 
-    def hide_history_lines(self, i):
-        all_lines = []
-        for i in range(len(self.pp_plan.cwl)):
-            all_lines += self.inf_lines[i]
-        chk = self.do_show_mean.checkState()
-        if not chk:
-            for i in all_lines:
-                self.trans_plot.removeItem(i.hist_trans_line)
-        else:
-            for i in all_lines:
-                self.trans_plot.addItem(i.hist_trans_line)
-
-    def hide_current_lines(self, i):
-        all_lines = []
-        for i in range(len(self.pp_plan.cwl)):
-            all_lines += self.inf_lines[i]
-        chk = self.do_show_cur.checkState()
-        if not chk:
-            for i in all_lines:
-                self.trans_plot.removeItem(i.trans_line)
-        else:
-            for i in all_lines:
-                self.trans_plot.addItem(i.trans_line)
+    def hide_current_lines(self, _state=None):
+        show = self.do_show_cur.isChecked()
+        self._set_lines_visible(show, "trans_line")
+        if show:
             self.handle_wl_change()
 
     def update_spec(self):
@@ -239,22 +231,21 @@ class PumpProbeDataViewer(QWidget):
         self.last_signal = pp.last_signal[sig_ch, :]
         if pp.mean_signal is not None:
             self.mean_signal = pp.mean_signal[sig_ch, :]
-        if self.do_show_cur.checkState():
-            for i in self.inf_lines[pp.wl_idx]:
-                i.trans_line.setData(
+        if self.do_show_cur.isChecked():
+            for line in self.inf_lines[pp.wl_idx]:
+                line.trans_line.setData(
                     x=pp.t_list[: pp.t_idx],
-                    y=pp.current_scan[pp.wl_idx, : pp.t_idx, sig_ch, i.channel],
+                    y=pp.current_scan[pp.wl_idx, : pp.t_idx, sig_ch, line.channel],
                 )
 
-        if pp.completed_scans is not None and self.do_show_mean.checkState():
-            for j in self.inf_lines:
-                for i in j:
-                    if i.hist_trans_line not in self.trans_plot.plotItem.dataItems:
-                        continue
-                    ym = np.nanmean(
-                        pp.completed_scans[:, i.wl_idx, :, sig_ch, i.channel], 0
-                    )
-                    i.hist_trans_line.setData(x=pp.t_list, y=ym)
+        if pp.completed_scans is not None and self.do_show_mean.isChecked():
+            for line in self._all_indicator_lines():
+                if not line.hist_trans_line.isVisible():
+                    continue
+                ym = np.nanmean(
+                    pp.completed_scans[:, line.wl_idx, :, sig_ch, line.channel], 0
+                )
+                line.hist_trans_line.setData(x=pp.t_list, y=ym)
 
     def get_x(self):
         wl = self.pp_plan.wavelengths[self.pp_plan.wl_idx]
@@ -363,7 +354,7 @@ class PumpProbeStarter(PlanStartDialog):
                 name = c.name
                 l = p[f"{name} center wls"].split(",")
                 try:
-                    assert len(l) > 0                    
+                    assert len(l) > 0
                     cam_cwls = []
                     for s in l:
                         if s[-1] == "c":
