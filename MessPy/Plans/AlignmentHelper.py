@@ -51,7 +51,7 @@ class SignalAlignmentHelper(QWidget):
                 self.spectrum_curves[(cam, line_name)] = curve
                 cb = QCheckBox(cam.cam.sig_names[line_name])
                 cb.setChecked(True)
-                cb.toggled.connect(curve.setVisible)
+                cb.setStyleSheet(f"color: {c.color().name()}")
                 self.check_boxes.append(cb)
 
             # reference points used to define the (linear) baseline
@@ -76,6 +76,16 @@ class SignalAlignmentHelper(QWidget):
                 self.max_lines[(cam, line_name)] = line, []
 
             self.graph_layouter.nextRow()
+
+            # link each checkbox to every plot item for its line (spectrum,
+            # ptp evolution and max evolution)
+            for line_name, cb in zip(
+                range(len(cam.cam.sig_names)),
+                self.check_boxes[-len(cam.cam.sig_names) :],
+            ):
+                cb.toggled.connect(self.spectrum_curves[(cam, line_name)].setVisible)
+                cb.toggled.connect(self.evo_lines[(cam, line_name)][0].setVisible)
+                cb.toggled.connect(self.max_lines[(cam, line_name)][0].setVisible)
 
         self.setLayout(
             qh.hlay([self.graph_layouter, qh.vlay(self.check_boxes, add_stretch=True)])
