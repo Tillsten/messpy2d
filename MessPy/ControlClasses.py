@@ -42,6 +42,10 @@ class Cam(QObject):
     wavelengths: np.ndarray = attrib(init=False)
     wavenumbers: np.ndarray = attrib(init=False)
     disp_axis: np.ndarray = attrib(init=False)
+    sig_lines: list[str] = attrib(init=False)
+    std_lines: list[str] = attrib(init=False)
+    name: str = attrib(init=False)
+    has_ref: bool = attrib(init=False)
 
     sigShotsChanged: T.ClassVar[Signal] = Signal(int)
     sigReadCompleted: T.ClassVar[Signal] = Signal()
@@ -290,7 +294,7 @@ class Controller(QObject):
 
         elif hasattr(self.plan, "make_step"):
             try:
-                #print('make_step')
+                # print('make_step')
                 self.plan.make_step()
                 time.sleep(0.02)
             except StopIteration:
