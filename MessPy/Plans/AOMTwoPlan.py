@@ -57,6 +57,7 @@ class AOMTwoDPlan(ScanPlan):
     do_stop: bool = False
     save_ref: bool = True
     save_frames_enabled: bool = False
+    save_thread: threading.Thread | None = None
 
     # Arrays to display
     disp_arrays: dict[str, np.ndarray] = attr.Factory(dict)
@@ -151,9 +152,13 @@ class AOMTwoDPlan(ScanPlan):
                         if scan == "mean":
                             continue
                         ifr = f"ifr_data/{line}/{t3_idx}/{scan}"
-                        data.append(f[ifr])
+                        ifr_dataset = f[ifr]
+                        assert isinstance(ifr_dataset, h5py.Dataset)
+                        data.append(ifr_dataset[()])
                         spec = f"2d_data/{line}/{t3_idx}/{scan}"
-                        specs.append(f[spec])
+                        spec_dataset = f[spec]
+                        assert isinstance(spec_dataset, h5py.Dataset)
+                        specs.append(spec_dataset[()])
                     if "mean" in f[f"ifr_data/{line}/{t3_idx}/"]:  # type: ignore
                         del f[f"ifr_data/{line}/{t3_idx}/mean"]
                         del f[f"2d_data/{line}/{t3_idx}/mean"]
@@ -161,11 +166,19 @@ class AOMTwoDPlan(ScanPlan):
                     f[f"2d_data/{line}/{t3_idx}/mean"] = np.mean(specs, 0)
 
     def post_scan(self) -> Generator:
-        #thr = threading.Thread(target=self.calculate_scan_means)
-        #thr.start()
+        # thr = threading.Thread(target=self.calculate_scan_means)
+        # thr.start()
+        yield from self._wait_for_save()
         self.calculate_scan_means()
         self.save_meta()
         yield
+
+    def _wait_for_save(self) -> Generator:
+        while self.save_thread is not None and self.save_thread.is_alive():
+            yield
+        if self.save_thread is not None:
+            self.save_thread.join()
+            self.save_thread = None
 
     def restore_state(self):
         for k in "amp", "phase", "chopped", "phase_cycle", "do_dispersion_compensation":
@@ -175,6 +188,7 @@ class AOMTwoDPlan(ScanPlan):
         self.controller.cam.set_shots(self.initial_state["shots"])
 
     def measure_point(self):
+        yield from self._wait_for_save()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             self.time_tracker.point_starting()
             future = executor.submit(
@@ -196,11 +210,13 @@ class AOMTwoDPlan(ScanPlan):
                 ret[0],
                 self.t2_idx,
                 self.cur_scan,
+                self.cur_t2,
             ),
         )
         thr.start()
+        self.save_thread = thr
 
-    def save_data(self, ret, t2_idx, cur_scan):
+    def save_data(self, ret, t2_idx, cur_scan, cur_t2):
         cur_date = datetime.now().isoformat()
         with h5py.File(self.data_file_name, mode="a", track_order=True) as f:
             data_ops = dict(
@@ -217,14 +233,14 @@ class AOMTwoDPlan(ScanPlan):
                             chunks=chunks,
                         )
                         ds.attrs["creation date"] = cur_date
-                        ds.attrs["time"] = self.cur_t2
+                        ds.attrs["time"] = cur_t2
                 else:
                     ds = f.create_dataset(
                         f"ifr_data/{line}/{t2_idx}/{cur_scan}",
                         data=data.interferogram,
                         dtype="float32",
                     )
-                    ds.attrs["time"] = self.cur_t2
+                    ds.attrs["time"] = cur_t2
                     ds.attrs["creation date"] = cur_date
                     ds = f.create_dataset(
                         f"2d_data/{line}/{t2_idx}/{cur_scan}",
