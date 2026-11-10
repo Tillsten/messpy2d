@@ -1,4 +1,3 @@
-
 import json
 import time
 from collections.abc import Callable, Generator
@@ -27,7 +26,6 @@ sample_parameters = {
         dict(name="Annotations", type="str", value=""),
         dict(name="Users:", type="str", value=""),
     ],
-    
 }
 
 
@@ -121,7 +119,7 @@ class Plan(QObject):
         name = f"{date_str} {self.plan_shorthand} {self.name}"
         p = Path(config.data_directory)
         if not p.exists():
-            raise OSError("Data path in config not existing")
+            raise OSError(f"Data path in config {config.data_directory} not existing")
         if (p / name).with_suffix(".json").exists():
             name = name + "_0"
         logger.info(f"Generated the filepath {p / name!s}")
@@ -263,5 +261,3 @@ class PointScan(ScanPlan):
 
     def measure_point(self) -> dict[str, ndarray]:
         raise NotImplementedError
-
-
