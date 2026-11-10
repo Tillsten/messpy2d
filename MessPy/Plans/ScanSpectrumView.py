@@ -44,8 +44,7 @@ class ScanSpectrumView(QWidget):
 
 class WavelengthParameter(pTypes.GroupParameter):
     def __init__(self, **opts):
-        opts["type"] = "float"
-        opts["value"] = 700
+        opts["type"] = "wavelength"
         pTypes.GroupParameter.__init__(self, **opts)
 
         self.addChild(
@@ -69,13 +68,23 @@ class WavelengthParameter(pTypes.GroupParameter):
         self.wl.sigValueChanged.connect(self.wl_changed)
         self.wn.sigValueChanged.connect(self.wn_changed)
 
+    def value(self):
+        """Single value of the group: the wavelength in nm."""
+        return self.wl.value()
+
+    def setValue(self, value, blockSignal=None):
+        if hasattr(self, "wl"):
+            self.wl.setValue(float(value))
+        return value
+
     def wl_changed(self):
-        self.wn.setValue(1e7 / self.wl.value(), blockSignal=self.wn_changed)
-        self.setValue(self.wl.value())
+        self.wn.setValue(1e7 / self.wl.value(), blockSlots=self.wn_changed)
 
     def wn_changed(self):
-        self.wl.setValue(1e7 / self.wn.value(), blockSignal=self.wl_changed)
-        self.setValue(self.wl.value())
+        self.wl.setValue(1e7 / self.wn.value(), blockSlots=self.wl_changed)
+
+
+pt.registerParameterType("wavelength", WavelengthParameter, override=True)
 
 
 class ScanSpectrumStarter(PlanStartDialog):
@@ -106,8 +115,8 @@ class ScanSpectrumStarter(PlanStartDialog):
         }
         cams = list(self.candidate_cams.keys())
         tmp.append(dict(name="Cam", type="list", limits=cams, value=cams[0]))
-        p = pt.Parameter(name="Exp. Settings", type="group", children=tmp)
-        sp = pt.Parameter(**sample_parameters)
+        p = pt.Parameter.create(name="Exp. Settings", type="group", children=tmp)
+        sp = pt.Parameter.create(**sample_parameters)
         params = [sp, p]
 
         self.paras = pt.Parameter.create(
