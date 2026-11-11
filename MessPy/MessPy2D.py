@@ -4,28 +4,17 @@ import qtawesome as qta
 from loguru import logger
 from pyqtgraph import setConfigOptions
 from PySide6.QtCore import QSettings, Qt, QThread, QTimer, Slot
-import qtawesome as qta
-from loguru import logger
-from pyqtgraph import setConfigOptions
-from PySide6.QtCore import QSettings, Qt, QThread, QTimer, Slot
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QCheckBox,
     QDockWidget,
     QGroupBox,
     QLabel,
     QMainWindow,
     QMessageBox,
-    QGroupBox,
-    QLabel,
-    QMainWindow,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
-    QSplashScreen,
-    QWidget,
     QSplashScreen,
     QWidget,
 )
@@ -39,9 +28,7 @@ from MessPy.QtHelpers import (
     ControlFactory,
     ObserverPlotWithControls,
     ValueLabels,
-    ValueLabels,
     hlay,
-    make_groupbox,
     make_groupbox,
     vlay,
 )
@@ -58,7 +45,6 @@ setConfigOptions(
 
 class MainWindow(QMainWindow):
     def __init__(self, controller: Controller):
-        super().__init__()
         super().__init__()
         self.setWindowTitle("Messpy-2D Edition")
         self.setWindowIcon(qta.icon("fa5s.play"))
@@ -168,9 +154,6 @@ class MainWindow(QMainWindow):
                 plans += [
                     ("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)
                 ]
-                plans += [
-                    ("Folding Mirror Scan", "fa5s.stopwatch", ScanFoldingMirrorsStarter)
-                ]
 
         for text, icon, starter in plans:
             asl_icon = qta.icon(icon, color="white")
@@ -194,11 +177,6 @@ class MainWindow(QMainWindow):
         alg_icon = qta.icon("fa5s.crosshairs")
         pp = QPushButton("Show alignment helper", icon=alg_icon)
         pp.clicked.connect(self.show_alignment_helper)
-        tb.addWidget(pp)
-
-        sig_alg_icon = qta.icon("fa5s.wave-square")
-        pp = QPushButton("Show signal alignment helper", icon=sig_alg_icon)
-        pp.clicked.connect(self.show_signal_alignment_helper)
         tb.addWidget(pp)
 
         sig_alg_icon = qta.icon("fa5s.wave-square")
@@ -243,11 +221,6 @@ class MainWindow(QMainWindow):
         self._sah = SignalAlignmentHelper(self.controller)
         self._sah.show()
 
-    @Slot()
-    def show_signal_alignment_helper(self):
-        self._sah = SignalAlignmentHelper(self.controller)
-        self._sah.show()
-
     # def closeEvent(self, *args, **kwargs):
     #     self.toggle_run(False)
 
@@ -275,7 +248,6 @@ class MainWindow(QMainWindow):
 
 class CommandMenu(QWidget):
     def __init__(self, controller, main_window):
-        super().__init__()
         super().__init__()
         self.main_window = main_window
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -355,10 +327,6 @@ class CommandMenu(QWidget):
             lambda x: rs.set_degrees(float(x)),
             format_str="%.1f deg",
             presets=[0, 45],
-            "Angle",
-            lambda x: rs.set_degrees(float(x)),
-            format_str="%.1f deg",
-            presets=[0, 45],
         )
         rsi.update_value(rs.get_degrees())
         rs.sigDegreesChanged.connect(rsi.update_value)
@@ -379,11 +347,6 @@ class CommandMenu(QWidget):
             sh,
             folding_mirror_1=getattr(sh, "fm1", None),
             folding_mirror_2=getattr(sh, "fm2", None),
-            sh.rot1,
-            sh.rot2,
-            sh,
-            folding_mirror_1=getattr(sh, "fm1", None),
-            folding_mirror_2=getattr(sh, "fm2", None),
         )
         but = QPushButton("Shaper Contorls")
         but.clicked.connect(self.shaper_controls.show)
@@ -392,7 +355,6 @@ class CommandMenu(QWidget):
 
 class ShutterControls(QGroupBox):
     def __init__(self, c: Controller):
-        super().__init__()
         super().__init__()
         self.setTitle("Shutters")
         assert len(c.shutter) > 0
@@ -407,7 +369,6 @@ class ShutterControls(QGroupBox):
 
 class CamControls(QGroupBox):
     def __init__(self, c: Controller):
-        super().__init__()
         super().__init__()
         # type: list[tuple[str, Callable, str]]
         bg_buttons = [("BG", c.cam.get_bg, "fa5.circle")]
@@ -449,7 +410,6 @@ class SpectrometerControls(QGroupBox):
         cam : ICam
             The camera object to control, here we assume it has a spectrometer object.
         """
-        super().__init__()
         super().__init__()
         spec = cam.cam.spectrograph
 
@@ -518,10 +478,9 @@ class DelayLineControl(QGroupBox):
 
     def __init__(self, c: Controller):
         super().__init__()
-        super().__init__()
         dl = c.delay_line
         dl1c = ControlFactory(
-            dl._dl.name,
+            "Delay 1",
             lambda x: c.delay_line.set_pos(x, do_wait=False),
             format_str="%.1f fs",
             extra_buttons=[("Set Home", dl.set_home)],
@@ -535,12 +494,10 @@ class DelayLineControl(QGroupBox):
         if c.delay_line_second:
             dl2 = c.delay_line_second
             dl2c = ControlFactory(
-                dl2._dl.name,
+                "Delay 2",
                 dl2.set_pos,
                 format_str="%.1f fs",
-                extra_buttons=[("Set Home", dl2.set_home)],
-                presets=[-50000, -10000, -1000.0001, -50, 50000, 10000, 1000.0001, 50],
-                        preset_func=lambda x: dl2.set_pos(dl2.get_pos() + x, do_wait=False),
+                extra_buttons=[("Set Home", dl2.set_pos)],
             )
             dls.append(dl2c)
             dl2.sigPosChanged.connect(dl2c.update_value)
@@ -549,20 +506,16 @@ class DelayLineControl(QGroupBox):
 
 
 def start_app(splash: QSplashScreen | None = None):
-def start_app(splash: QSplashScreen | None = None):
     import sys
     import traceback
 
     from pyqtgraph.parametertree.parameterTypes.basetypes import GroupParameter
 
     GroupParameter.value = lambda self: self.opts.get("value", None)
-
-    GroupParameter.value = lambda self: self.opts.get("value", None)
     from pyqtgraph import mkQApp, setConfigOption
 
     setConfigOption("antialias", True)
     app = mkQApp()
-    app.setStyle("fusion")
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")
@@ -590,8 +543,6 @@ def start_app(splash: QSplashScreen | None = None):
 
     mw = MainWindow(Controller())
     mw.showMaximized()
-    if splash is not None:
-        splash.finish(mw)
     if splash is not None:
         splash.finish(mw)
     app.exec()

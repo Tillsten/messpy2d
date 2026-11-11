@@ -1,13 +1,9 @@
 import concurrent.futures
 import functools
 import json
-import functools
-import json
 import threading
 from collections.abc import Generator
-from collections.abc import Generator
 from datetime import datetime
-from pathlib import Path
 from pathlib import Path
 from typing import (
     ClassVar,
@@ -19,15 +15,12 @@ import h5py
 import numpy as np
 from attr import attrs
 from numpy._typing import NDArray
-from attr import attrs
-from numpy._typing import NDArray
 from PySide6.QtCore import Signal
 
 from MessPy.ControlClasses import Controller, config
 from MessPy.Instruments.dac_px import AOM
 from MessPy.Instruments.signal_processing import THz2cm, cm2THz
 
-from .PlanBase import ScanPlan
 from .PlanBase import ScanPlan
 
 h5py_ops = dict(
@@ -65,15 +58,11 @@ class AOMTwoDPlan(ScanPlan):
     save_ref: bool = True
     save_frames_enabled: bool = False
     save_thread: threading.Thread | None = None
-    save_thread: threading.Thread | None = None
 
     # Arrays to display
     disp_arrays: dict[str, np.ndarray] = attr.Factory(dict)
     last_ir: np.ndarray | None = None
     last_2d: tuple[np.ndarray, np.ndarray] | None = None
-
-    # Threads 
-    save_threads: list[threading.Thread] = attr.Factory(list)
 
     # Signals
     sigStepDone: ClassVar[Signal] = Signal()
@@ -123,10 +112,7 @@ class AOMTwoDPlan(ScanPlan):
         c = self.controller
         for self.t2_idx, self.cur_t2 in enumerate(self.t2):
             c.delay_line.set_pos(self.cur_t2 * 1000, do_wait=True)
-            for thr in self.save_threads:
-                thr.join()
-            self.save_threads.clear()
-            
+
             yield from self.measure_point()
             self.time_tracker.point_ending()
             self.sigStepDone.emit()
@@ -169,13 +155,7 @@ class AOMTwoDPlan(ScanPlan):
                         ifr_dataset = f[ifr]
                         assert isinstance(ifr_dataset, h5py.Dataset)
                         data.append(ifr_dataset[()])
-                        ifr_dataset = f[ifr]
-                        assert isinstance(ifr_dataset, h5py.Dataset)
-                        data.append(ifr_dataset[()])
                         spec = f"2d_data/{line}/{t3_idx}/{scan}"
-                        spec_dataset = f[spec]
-                        assert isinstance(spec_dataset, h5py.Dataset)
-                        specs.append(spec_dataset[()])
                         spec_dataset = f[spec]
                         assert isinstance(spec_dataset, h5py.Dataset)
                         specs.append(spec_dataset[()])
@@ -189,19 +169,9 @@ class AOMTwoDPlan(ScanPlan):
         # thr = threading.Thread(target=self.calculate_scan_means)
         # thr.start()
         yield from self._wait_for_save()
-        # thr = threading.Thread(target=self.calculate_scan_means)
-        # thr.start()
-        yield from self._wait_for_save()
         self.calculate_scan_means()
         self.save_meta()
         yield
-
-    def _wait_for_save(self) -> Generator:
-        while self.save_thread is not None and self.save_thread.is_alive():
-            yield
-        if self.save_thread is not None:
-            self.save_thread.join()
-            self.save_thread = None
 
     def _wait_for_save(self) -> Generator:
         while self.save_thread is not None and self.save_thread.is_alive():
@@ -218,7 +188,6 @@ class AOMTwoDPlan(ScanPlan):
         self.controller.cam.set_shots(self.initial_state["shots"])
 
     def measure_point(self):
-        yield from self._wait_for_save()
         yield from self._wait_for_save()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             self.time_tracker.point_starting()
@@ -242,14 +211,11 @@ class AOMTwoDPlan(ScanPlan):
                 self.t2_idx,
                 self.cur_scan,
                 self.cur_t2,
-                self.cur_t2,
             ),
         )
         thr.start()
         self.save_thread = thr
-        self.save_thread = thr
 
-    def save_data(self, ret, t2_idx, cur_scan, cur_t2):
     def save_data(self, ret, t2_idx, cur_scan, cur_t2):
         cur_date = datetime.now().isoformat()
         with h5py.File(self.data_file_name, mode="a", track_order=True) as f:
@@ -268,14 +234,12 @@ class AOMTwoDPlan(ScanPlan):
                         )
                         ds.attrs["creation date"] = cur_date
                         ds.attrs["time"] = cur_t2
-                        ds.attrs["time"] = cur_t2
                 else:
                     ds = f.create_dataset(
                         f"ifr_data/{line}/{t2_idx}/{cur_scan}",
                         data=data.interferogram,
                         dtype="float32",
                     )
-                    ds.attrs["time"] = cur_t2
                     ds.attrs["time"] = cur_t2
                     ds.attrs["creation date"] = cur_date
                     ds = f.create_dataset(
@@ -312,5 +276,4 @@ class AOMTwoDPlan(ScanPlan):
 
     def stop_plan(self):
         self.do_stop = True
-        super().stop_plan()
         super().stop_plan()

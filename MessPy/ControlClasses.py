@@ -21,21 +21,15 @@ Reading = I.Reading
 @attrs(cmp=False, auto_attribs=True)
 class Cam(QObject):
     cam: I.ICam = hw.cam
-    cam: I.ICam = hw.cam
 
     disp_wavelengths: bool = True
 
     shots: int = attrib(init=False)
 
     last_read: I.Reading | None = attrib(init=False)
-    last_read: I.Reading | None = attrib(init=False)
     wavelengths: np.ndarray = attrib(init=False)
     wavenumbers: np.ndarray = attrib(init=False)
     disp_axis: np.ndarray = attrib(init=False)
-    sig_lines: list[str] = attrib(init=False)
-    std_lines: list[str] = attrib(init=False)
-    name: str = attrib(init=False)
-    has_ref: bool = attrib(init=False)
     sig_lines: list[str] = attrib(init=False)
     std_lines: list[str] = attrib(init=False)
     name: str = attrib(init=False)
@@ -220,7 +214,7 @@ class Controller(QObject):
 
     cam: Cam = attrib(init=False)
     delay_line: DelayLine = Factory(lambda: DelayLine(hw.dl))
-    delay_line_second: DelayLine | None = Factory(lambda: DelayLine(hw.dl2) if hw.dl2 else None)
+    delay_line_second: DelayLine | None = None
     cam2: Cam | None = attrib(init=False)
     cam_list: list[Cam] = Factory(list)
     shutter: list[I.IShutter] = hw.shutter

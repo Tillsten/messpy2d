@@ -2,11 +2,7 @@ import platform
 import typing as T
 
 import attr
-import typing as T
-
-import attr
 from loguru import logger
-from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QApplication
 
 from MessPy.Config import config
@@ -83,7 +79,6 @@ class Hardware:
     cam: ICam | None = None
     cam2: ICam | None = None
     dl: IDelayLine | None = None
-    dl2: IDelayLine | None = None
     rot_stage: IRotationStage | None = None
     shutter: list[IShutter] = attr.Factory(list)
     sh: ILissajousScanner | None = None
@@ -159,10 +154,8 @@ class Hardware:
 
         def _init_dl():
             from MessPy.Instruments.delay_line_newport import NewportDelay
-            from MessPy.Instruments.delay_line_apt import DelayLine
-            self.dl = _move_to_main_thread(NewportDelay(name="IR Delay", pos_sign=-1, comport="COM7"))
-           
-            self.dl2 = _move_to_main_thread(DelayLine(name="VisDelay"))
+
+            self.dl = _move_to_main_thread(NewportDelay(name="IR Delay", pos_sign=-1))
 
         def _init_aom():
             from MessPy.Instruments.dac_px import AOM, AOMShutter
@@ -207,30 +200,9 @@ class Hardware:
         #    self.shutter.append(PhidgetShutter())
         # except ImportError:
         #    logger.warning("PhidgetShutter import failed")
-        #    self.shutter.append(PhidgetShutter())
-        # except ImportError:
-        #    logger.warning("PhidgetShutter import failed")
 
         # from MessPy.Instruments.stage_smartact import SmarActXYZ
-        # from MessPy.Instruments.stage_smartact import SmarActXYZ
 
-        # self.sh = SmarActXYZ()
-        self.power_meter = None
-        # try:
-        #    from MessPy.Instruments.cam_power import PowerCam
-        #    self.power_meter = PowerCam()
-        # except:
-        #    self.power_meter = None
-        # try:
-        #    from MessPy.Instruments.ophire import Starbright
-        #    self.power_meter = Starbright()
-        # except:
-        # self.power_meter = None
-
-
-hw = Hardware()
-
-TESTING = config.testing
         # self.sh = SmarActXYZ()
         self.power_meter = None
         # try:
