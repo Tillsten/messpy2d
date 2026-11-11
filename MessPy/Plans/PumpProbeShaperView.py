@@ -1,10 +1,11 @@
 import numpy as np
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QLabel, QWidget
 from qtawesome import icon
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, vlay, make_entry
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
+
 from .PumpProbeShaper import PumpProbeShaperPlan
 
 

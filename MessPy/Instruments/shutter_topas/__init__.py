@@ -1,5 +1,7 @@
+import time
 from typing import List
-import requests, time
+
+import requests
 from attr import dataclass
 
 from MessPy.Instruments.interfaces import IShutter
@@ -9,7 +11,7 @@ port = '8000'
 serial_number = '14187'
 version = 'v0'
 
-url = 'http://{}:{}/{}/{}/PublicAPI'.format(ip_address, port, serial_number, version)
+url = f'http://{ip_address}:{port}/{serial_number}/{version}/PublicAPI'
 
 
 @dataclass(kw_only=True)
@@ -28,9 +30,8 @@ class TopasShutter(IShutter):
     def get_state(self) -> dict:
         return self._get_motor_state()
 
-    def load_state(self, exclude: List[str] | None = None):
+    def load_state(self, exclude: list[str] | None = None):
         """Do nothing"""
-        pass
 
     def put(self, url, data):
         return requests.put(self.baseAddress + url, json=data)
@@ -47,7 +48,7 @@ class TopasShutter(IShutter):
     def toggle(self):
         start_state = self.is_open()
         self.put('/ShutterInterlock/OpenCloseShutter', not start_state)
-        self.sigShutterToggled.emit((not start_state))
+        self.sigShutterToggled.emit(not start_state)
         time.sleep(0.1)
 
 

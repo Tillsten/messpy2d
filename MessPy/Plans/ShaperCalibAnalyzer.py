@@ -1,26 +1,22 @@
-from PySide6.QtWidgets import (
-    QWidget,
-    QSpinBox,
-    QPushButton,
-    QHBoxLayout,
-    QDialogButtonBox,
-    QLabel,
-    QVBoxLayout,
-    QSizePolicy,
-    QApplication,
-    QCheckBox,
-)
-from PySide6.QtCore import Signal
-from typing import Optional
 
-
-from pyqtgraph import PlotWidget, TextItem, ScatterPlotItem, InfiniteLine, mkPen
 import attr
 import numpy as np
+from pyqtgraph import PlotWidget, TextItem, mkPen
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 from scipy.constants import c
-from scipy.optimize import least_squares
+from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
-from scipy.ndimage import uniform_filter1d, gaussian_filter1d
 
 
 def nm2THz(x):
@@ -57,7 +53,7 @@ class CalibView(QWidget):
     x: np.ndarray
     y_train: np.ndarray
     y_single: np.ndarray
-    y_full: Optional[np.ndarray] = None
+    y_full: np.ndarray | None = None
 
     single: int = 6000
     width: int = 50
@@ -68,7 +64,7 @@ class CalibView(QWidget):
     filter: float = 0
     area: float = 25.0
 
-    coeff: Optional[np.ndarray] = None
+    coeff: np.ndarray | None = None
 
     sigCalibrationAccepted = Signal(object)
     sigCalibrationCanceled = Signal()

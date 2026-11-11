@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Sep 02 15:38:46 2013
 
@@ -6,24 +5,24 @@ Created on Mon Sep 02 15:38:46 2013
 """
 
 # -*- coding: utf-8 -*-
-"""
+r"""
 Spyder Editor
 
 This temporary script file is located here:
 C:\Documents and Settings\Owner\Desktop\WinPython-32bit-2.7.5.2\settings\.spyder2\.temp.py
 """
-import numpy as np
-import PyDAQmx, struct
-from PyDAQmx.DAQmxTypes import *
-from PyDAQmx.DAQmxConstants import *
+import os
+import time
+from threading import Lock, Thread
 
-from PySide6.QtCore import QThread, QTimer, QMutex
-from threading import Thread, Lock
+import numpy as np
+import PyDAQmx
+from PyDAQmx.DAQmxConstants import *
+from PyDAQmx.DAQmxTypes import *
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
-import time, os
 
 sleep = time.sleep
-import threading
 
 cur_dir = os.path.dirname(__file__)
 
@@ -116,7 +115,7 @@ def calc_delay_ns(steps):
     return steps * 2 - 30
 
 
-class InfraAD(object):
+class InfraAD:
     has_external = True
 
     def __init__(self):
@@ -359,7 +358,7 @@ if __name__ == "__main__":
         try:
             t = time.time()
             # print(cam.check_ready())
-            a, b, c, d = cam.read_cam()  #
+            a, b, c, d = cam.read_cam()
             print(time.time() - t)
             print(c.sum())
         except:

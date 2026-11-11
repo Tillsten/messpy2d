@@ -1,8 +1,10 @@
-from MessPy.Instruments.interfaces import IShutter
+import time
+
 from attr import dataclass, field
 from Phidget22.Devices.RCServo import RCServo
 
-import time
+from MessPy.Instruments.interfaces import IShutter
+
 
 @dataclass(kw_only=True)
 class PhidgetShutter(IShutter):

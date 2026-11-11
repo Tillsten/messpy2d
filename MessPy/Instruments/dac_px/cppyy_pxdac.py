@@ -1,10 +1,10 @@
 # %%
-import cppyy
-import cppyy.ll as ll
 import ctypes as ct
-import ctypes.wintypes as wt
+
+import cppyy
+
  # %%
-cppyy.load_library("C:\Program Files (x86)\Signatec\PXDAC4800\Lib64\PXDAC4800_64.dll")
+cppyy.load_library(r"C:\Program Files (x86)\Signatec\PXDAC4800\Lib64\PXDAC4800_64.dll")
 cppyy.add_include_path(r'C:\Program Files (x86)\Signatec\PXDAC4800\Include')
 cppyy.include('pxdac4800.h')
 
@@ -57,6 +57,7 @@ cppyy.gbl.SetDacSampleSizeXD48(hdl, 2)
 
 masks = 4
 import numpy as np
+
 buf = (1<<15-1)*np.sin(2*np.pi*np.arange(4096*3)/16)
 #buf = np.hstack(buf, buf))
 buf = np.tile(buf, masks)
@@ -67,6 +68,7 @@ buf2[4096*3:] = 0
 #out[::2] = 1<<8
 #out.size
 import matplotlib.pyplot as plt
+
 bufi = buf.astype('int16')
 
 dual_buf = np.empty(buf.size*2, dtype=np.int16)

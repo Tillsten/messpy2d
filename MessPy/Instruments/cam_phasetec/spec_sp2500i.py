@@ -1,10 +1,10 @@
-from functools import cached_property
-from typing import Dict
-
-import serial
-import attr
-import logging
 import atexit
+import logging
+from functools import cached_property
+
+import attr
+import serial
+
 from MessPy.Instruments.interfaces import ISpectrograph
 
 
@@ -33,7 +33,7 @@ class SP2150i(ISpectrograph):
             logging.debug(f"SP2500i: Waiting for ok: {cmd}")
             resp = self._readline(timeout=timeout)
             if resp[-2:] != b"ok":
-                raise IOError(f"Command not responded with OK, got '{resp}' instead")
+                raise OSError(f"Command not responded with OK, got '{resp}' instead")
             return resp
         else:
             return
@@ -71,7 +71,7 @@ class SP2150i(ISpectrograph):
         return resp.decode("utf-8")
 
     @property
-    def gratings(self) -> Dict[int, str]:
+    def gratings(self) -> dict[int, str]:
         return {1: "75", 2: "30"}
 
     def get_grating(self) -> int:

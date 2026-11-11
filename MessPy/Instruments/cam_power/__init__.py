@@ -1,9 +1,10 @@
-from qtpy import QtWidgets, QtCore
+import attr
 import instrumental.drivers.cameras.uc480
+from instrumental import instrument
+from qtpy import QtCore, QtWidgets
 
 from MessPy.Instruments.interfaces import IPowerMeter
-import attr
-from instrumental import instrument
+
 
 @attr.dataclass(kw_only=True)
 class PowerCam(IPowerMeter):
@@ -12,7 +13,7 @@ class PowerCam(IPowerMeter):
     exposure_ms: float = 1.99
 
     def __attrs_post_init__(self):
-        super(PowerCam, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         self._cam.set_auto_exposure(False)
         self._cam.start_live_video(exposure_time='%.2fms'%self.exposure_ms, vsub=2, hsub=2)
 

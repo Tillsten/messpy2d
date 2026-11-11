@@ -22,3 +22,4 @@ _*.c
 *.obj
 MessPy/Instruments/cam_phasetec/_imaqffi.cp312-win_amd64.pyd
 Bist_Complete_result.txt
+pixi.lock

@@ -1,12 +1,11 @@
-from cffi import FFI
 import pathlib
 from threading import Lock
-from typing import Optional
 
 import nidaqmx
 import nidaqmx.constants as c
 import numpy as np
-from nicelib import load_lib, NiceLib, Sig, RetHandler
+from cffi import FFI
+from nicelib import NiceLib, RetHandler, Sig, load_lib
 
 
 @RetHandler(num_retvals=0)
@@ -124,8 +123,8 @@ class Cam:
 
     def read_cam(
         self,
-        lines: Optional[dict[str, tuple]] = None,
-        back: Optional[np.ndarray] = None,
+        lines: dict[str, tuple] | None = None,
+        back: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         self.reading_lock.acquire()
         IMAQ.imgSessionStartAcquisition(self.s)
@@ -182,8 +181,8 @@ if __name__ == "__main__":
     l = win.plotItem.plot()
     win.show()
 
-    import time
     import threading
+    import time
 
     cam = Cam()
     cam.set_shots(20)

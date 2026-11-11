@@ -140,9 +140,9 @@ class FocusScan(Plan):
     cam: Cam
     fh: ILissajousScanner
     plan_shorthand: T.ClassVar[str] = "FocusScan"
-    x_parameters: T.Optional[list]
-    y_parameters: T.Optional[list]
-    z_points: T.Optional[list] = None
+    x_parameters: list | None
+    y_parameters: list | None
+    z_points: list | None = None
     adaptive: bool = True
     max_rel_change: float = 0.1
     min_step: float = 0.005
@@ -150,13 +150,13 @@ class FocusScan(Plan):
     sigStepDone: T.ClassVar[Signal] = Signal()
     sigFitDone: T.ClassVar[Signal] = Signal(int)
 
-    scan_x: T.Optional[Scan] = None
-    scan_y: T.Optional[Scan] = None
-    scans: T.Dict[str, Scan] = attr.Factory(dict)
-    power_meter: T.Optional[IPowerMeter] = None
+    scan_x: Scan | None = None
+    scan_y: Scan | None = None
+    scans: dict[str, Scan] = attr.Factory(dict)
+    power_meter: IPowerMeter | None = None
 
     def __attrs_post_init__(self):
-        super(FocusScan, self).__attrs_post_init__()
+        super().__attrs_post_init__()
         if self.z_points is None:
             self.z_points = [self.fh.get_zpos_mm()]
         self.scans = {}

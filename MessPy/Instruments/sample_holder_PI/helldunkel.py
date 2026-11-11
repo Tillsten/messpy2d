@@ -1,4 +1,3 @@
-import types
 import serial
 
 DEBUG = True
@@ -24,7 +23,7 @@ COMMAND_LIST = [
 ]
 
 
-class FringeCounter(object):
+class FringeCounter:
     '''
     FringeCounter, controling the HellDunkelZaehler from Hamm Group.
     '''
@@ -49,7 +48,7 @@ class FringeCounter(object):
         if answ[0] == expected_answ[0]:
             return answ[:-2]
         else:
-            raise IOError('Send: {0}, Answ: {1}'.format(cmd, answ))
+            raise OSError(f'Send: {cmd}, Answ: {answ}')
 
     def make_command(self,
                      name,
@@ -66,13 +65,13 @@ class FringeCounter(object):
                         err_msg = 'Value of {} outside allowed range of {}-{}'
                         raise ValueError(err_msg.format(value, *value_range))
 
-                cmd = 'S {0: 02d} {1: d}'.format(addr, value)
+                cmd = f'S {addr: 02d} {value: d}'
                 self.send_cmd(cmd)            
             setattr(self, "set_" + name, setter)
 
         if 'G' in mode:
             def getter():
-                cmd = 'G {0: 02d} 0'.format(addr)
+                cmd = f'G {addr: 02d} 0'
                 ans = self.send_cmd(cmd)
                 if extra_output == 'ASCII':
                     n = int(ans.split(b' ')[1])
@@ -92,7 +91,7 @@ class FringeCounter(object):
         if 'T' in mode:
 
             def func():
-                cmd = 'T {0: 02d} 0'.format(addr)
+                cmd = f'T {addr: 02d} 0'
                 ans = self.send_cmd(cmd)
                 if extra_output:
                     ans = (ans, self.port.read_until(CRLF))
@@ -105,8 +104,8 @@ class FringeCounter(object):
 
 
 if __name__ == '__main__':
-    import time
     import struct
+    import time
     a = FringeCounter()
     print(dir(a))
     #    print(a.get_pd1_offset())

@@ -1,14 +1,14 @@
+import lmfit
 import numpy as np
 import pyqtgraph.parametertree as pt
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
 from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QLabel, QPushButton, QWidget
 from qtawesome import icon
 
 from MessPy.ControlClasses import Controller
-from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, vlay, make_entry
-from .FastGVDScan import FastGVDScan
+from MessPy.QtHelpers import ObserverPlot, PlanStartDialog, make_entry, vlay
 
-import lmfit
+from .FastGVDScan import FastGVDScan
 
 
 def gaussfit(x, y, offset=True):
@@ -30,7 +30,7 @@ def gaussfit(x, y, offset=True):
 
 class FastGVDScanView(QWidget):
     def __init__(self, gvd_plan: FastGVDScan, *args, **kwargs):
-        super(FastGVDScanView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.plan = gvd_plan
 
         self.gvd_amp = ObserverPlot(

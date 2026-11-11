@@ -2,12 +2,12 @@
 
 #from shutter import sh
 #from MessPy.Instruments.RotationStage import rs
-from MessPy.Instruments.delay_line_mercury import _dl
 import threading
-
 import xmlrpc.server
 
+from MessPy.Instruments.delay_line_mercury import _dl
 from MessPy.Instruments.sample_holder_PI import SampleHolder
+
 thr = SampleHolder.create_remote(('', 8001), 'thread')
 thr.start()
 

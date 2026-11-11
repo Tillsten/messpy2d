@@ -1,7 +1,9 @@
 
 # _build_foo.py
-from nicelib import build_lib
 from pathlib import Path
+
+from nicelib import build_lib
+
 header_info = {
     'win*': {
         'path': (
