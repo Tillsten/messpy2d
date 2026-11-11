@@ -384,11 +384,11 @@ class PumpProbeStarter(PlanStartDialog):
         else:
             p_shutter = None
 
-        stages = [self.controller.delay_line._dl.name, self.controller.delay_line_second._dl.name]
-        if p["Main Delay Line"] == stages[0]:
-            dl = self.controller.delay_line
-        elif p["Main Delay Line"] == stages[1]:
-            dl = self.controller.delay_line_second
+        dl = self.controller.delay_line
+        if self.controller.delay_line_second is not None:
+            stages = [dl._dl.name, self.controller.delay_line_second._dl.name]
+            if p["Main Delay Line"] == stages[1]:
+                dl = self.controller.delay_line_second
         p = PumpProbePlan(
             name=p["Filename"],
             meta=make_entry(self.paras),
@@ -421,9 +421,13 @@ if __name__ == "__main__":
     timer = QTimer()
     timer.timeout.connect(con.loop)
 
-    pp = PumpProbePlan(name="BlaBlub", controller=con)
+    pp = PumpProbePlan(
+        name="BlaBlub",
+        controller=con,
+        main_delay_line=con.delay_line,
+        t_list=np.arange(-2, 2, 0.1),
+    )
     con.plan = pp
-    pp.t_list = np.arange(-2, 2, 0.1)
     pp.center_wl_list = [300]
     ppi = PumpProbeViewer(pp)
     ppi.show()

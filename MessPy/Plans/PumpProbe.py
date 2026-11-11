@@ -12,7 +12,7 @@ from PySide6.QtCore import QObject, Signal
 from .PlanBase import Plan
 
 if TYPE_CHECKING:
-    from MessPy.ControlClasses import Cam, Controller
+    from MessPy.ControlClasses import Cam, Controller, DelayLine
     from MessPy.Instruments.interfaces import IShutter
 
 
@@ -22,6 +22,7 @@ class PumpProbePlan(Plan):
 
     controller: "Controller"
     t_list: np.ndarray
+    main_delay_line: "DelayLine"
     shots: int = 1000
     num_scans: int = 0
     t_idx: int = 0
@@ -55,7 +56,7 @@ class PumpProbePlan(Plan):
         self.angle_cycle = []
         self.cam_data = []
         self.pre_state = dict(
-            shots=self.controller.cam.shots, delay=self.controller.delay_line.get_pos()
+            shots=self.controller.cam.shots, delay=self.main_delay_line.get_pos()
         )
         for c, cwl in zip(self.controller.cam_list, self.center_wl_list):
             self.cam_data.append(
@@ -80,8 +81,8 @@ class PumpProbePlan(Plan):
                     yield
 
     def move_delay_line(self, t):
-        self.controller.delay_line.set_pos(t, do_wait=False)
-        while self.controller.delay_line.moving:
+        self.main_delay_line.set_pos(t, do_wait=False)
+        while self.main_delay_line.moving:
             yield
 
     def pre_scan(self) -> Generator:
@@ -104,7 +105,7 @@ class PumpProbePlan(Plan):
         # -- scan
         if self.do_ref_calib and False:
             print("Calibrating Ref")
-            print(f"At t={self.controller.delay_line.get_pos()}")
+            print(f"At t={self.main_delay_line.get_pos()}")
             self.cam_data[0].cam.cam.calibrate_ref()
         for self.t_idx, t in enumerate(self.t_list):
             yield from self.move_delay_line(t * 1000)
@@ -145,7 +146,7 @@ class PumpProbePlan(Plan):
 
             # --- post scans
             self.num_scans += 1
-            self.controller.delay_line.set_pos(self.t_list[0], do_wait=False)
+            self.main_delay_line.set_pos(self.t_list[0], do_wait=False)
             for pp in self.cam_data:
                 pp.post_scan()
 
@@ -182,7 +183,7 @@ class PumpProbePlan(Plan):
         super().restore_state()
         # TODO: cam_list
         self.controller.cam.set_shots(self.pre_state["shots"])
-        self.controller.delay_line.set_pos(self.pre_state["delay"], do_wait=False)
+        self.main_delay_line.set_pos(self.pre_state["delay"], do_wait=False)
 
 
 @attrs(auto_attribs=True, cmp=False)
