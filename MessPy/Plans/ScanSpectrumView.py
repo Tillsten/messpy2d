@@ -41,41 +41,49 @@ class ScanSpectrumView(QWidget):
         self.setLayout(vlay([self.top_plot, self.bot_plot]))
 
 
-class WavelengthParameter(pTypes.GroupParameter):
-    def __init__(self, **opts):
-        opts["type"] = "float"
-        opts["value"] = 700
-        pTypes.GroupParameter.__init__(self, **opts)
+def make_wl_param(name):
 
-        self.addChild(
-            {
-                "name": "Wavelength (nm)",
-                "type": "float",
-                "value": 700,
-                "decimals": 5,
-            }
+    group = pt.Parameter.create(
+        name=name,
+        type="group",
+    )
+
+    group.addChild({
+        "name": "Wavelength (nm)",
+        "type": "float",
+        "value": 700,
+        "decimals": 5,
+        "limits": (0.001, 1e7),
+    })
+
+    group.addChild({
+        "name": "Wavenumber (cm-1)",
+        "type": "float",
+        "value": 1e7 / 700.0,
+        "decimals": 5,
+        "limits": (0.001, 1e7),
+    })
+
+    group.wl = group.param("Wavelength (nm)")
+    group.wn = group.param("Wavenumber (cm-1)")
+
+    def wl_changed(param, value):
+        group.wn.setValue(
+            1e7 / value,
+            blockSignal=group.wn.sigValueChanged,
         )
-        self.addChild(
-            {
-                "name": "Wavenumber (cm-1)",
-                "type": "float",
-                "value": 1e7 / 700.0,
-                "decimals": 5,
-            }
+
+    def wn_changed(param, value):
+        group.wl.setValue(
+            1e7 / value,
+            blockSignal=group.wl.sigValueChanged,
         )
-        self.wl = self.param("Wavelength (nm)")
-        self.wn = self.param("Wavenumber (cm-1)")
-        self.wl.sigValueChanged.connect(self.wl_changed)
-        self.wn.sigValueChanged.connect(self.wn_changed)
 
-    def wl_changed(self):
-        self.wn.setValue(1e7 / self.wl.value(), blockSignal=self.wn_changed)
-        self.setValue(self.wl.value())
+    group.wl.sigValueChanged.connect(wl_changed)
+    group.wn.sigValueChanged.connect(wn_changed)
+    group.value = group.wl.value
 
-    def wn_changed(self):
-        self.wl.setValue(1e7 / self.wn.value(), blockSignal=self.wl_changed)
-        self.setValue(self.wl.value())
-
+    return group
 
 class ScanSpectrumStarter(PlanStartDialog):
     experiment_type = "ScanSpec"
@@ -93,8 +101,8 @@ class ScanSpectrumStarter(PlanStartDialog):
                 "step": 100,
                 "value": 100,
             },
-            WavelengthParameter(name="Min."),
-            WavelengthParameter(name="Max."),
+            make_wl_param(name="Min."),
+            make_wl_param(name="Max."),
             {"name": "Resolution", "type": "float", "min": 1.0, "value": 100.0},
             {"name": "Linear Axis", "type": "list", "limits": ["cm-1", "nm"], "value": "cm-1"},
             {"name": "timeout", "type": "float", "value": 3},
@@ -105,8 +113,8 @@ class ScanSpectrumStarter(PlanStartDialog):
         }
         cams = list(self.candidate_cams.keys())
         tmp.append(dict(name="Cam", type="list", limits=cams, value=cams[0]))
-        p = pt.Parameter(name="Exp. Settings", type="group", children=tmp)
-        sp = pt.Parameter(**sample_parameters)
+        p = pt.Parameter.create(name="Exp. Settings", type="group", children=tmp)
+        sp = pt.Parameter.create(**sample_parameters)
         params = [sp, p]
 
         self.paras = pt.Parameter.create(
