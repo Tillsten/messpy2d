@@ -37,8 +37,8 @@ class FastGVDScanView(QWidget):
             obs=[
                 lambda: self.plan.probe.mean(0) / self.plan.iter,
                 lambda: self.plan.probe2.mean(0) / self.plan.iter,
-                (gvd_plan.cur_mean),
-                (gvd_plan.cur_mean2),
+                lambda: gvd_plan.cur_mean.mean(0),
+                lambda: gvd_plan.cur_mean2.mean(0),
             ],
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,
@@ -49,8 +49,8 @@ class FastGVDScanView(QWidget):
             obs=[
                 lambda: self.plan.signal.max(0) / self.plan.iter,
                 lambda: self.plan.signal2.max(0) / self.plan.iter,
-                (gvd_plan.cur_sig),
-                (gvd_plan.cur_sig2),
+                lambda: gvd_plan.cur_sig.mean(0),
+                lambda: gvd_plan.cur_sig2.mean(0),
             ],
             signal=gvd_plan.sigPointRead,
             x=gvd_plan.gvd_list,

@@ -68,7 +68,7 @@ class PhaseTecCam(ICam):
     background: Optional[np.ndarray] = attr.Factory(_back_default)
     can_validate_pixel: bool = True
     valid_pixel: Optional[dict[str, np.ndarray]] = None
-    frame_channel: int = 0
+    frame_channel: int = 1
     _cam: Cam = attr.ib(factory=Cam)
     darklevel: int = 0
     amplification: int = 7
@@ -83,6 +83,7 @@ class PhaseTecCam(ICam):
             "rows": self.rows,
             "darklevel": self.darklevel,
             "amplification": self.amplification,
+            "frame_channel": self.frame_channel,
         }
         return d
 
@@ -281,3 +282,13 @@ class PhaseTecCam(ICam):
             return np.arange(-64, 64, 1)
         else:
             return (np.arange(128) - center_ch) * disp + center_wl
+
+    def get_extra_widgets(self):
+        from PySide6.QtWidgets import QWidget, QCheckBox, QHBoxLayout
+
+
+        cb = QCheckBox("Frame Channel")
+        cb.setChecked(bool(self.frame_channel))
+        cb.stateChanged.connect(lambda x: setattr(self, 'frame_channel', 0 if x == 0 else 1 ))                               
+    
+        return cb

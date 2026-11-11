@@ -36,7 +36,7 @@ class APTDelay:
         channel.WaitForSettingsInitialized(5000)
         channel.EnableDevice()
         channel.LoadMotorConfiguration(channel.DeviceID)
-        channel.StartPolling(500)
+        channel.StartPolling(100)
 
         motorConfiguration = channel.LoadMotorConfiguration(channel.DeviceID)
         currentDeviceSettings = channel.MotorDeviceSettings
@@ -45,6 +45,11 @@ class APTDelay:
         pid.set_DerivativeGain(3000)
         self.channel = channel
         self.moving = False
+        print(type(channel))
+        print([x for x in dir(channel) if "Pos" in x])
+        print([x for x in dir(channel) if "Move" in x])
+        print([x for x in dir(channel) if "Busy" in x])
+        print([x for x in dir(channel) if "Status" in x])
 
     def move_mm(self, x: float):
         if self.moving:
@@ -55,12 +60,37 @@ class APTDelay:
         act = Action[UInt64](f)
         self.moving = True
         self.channel.MoveTo(Decimal(x), act)
-
+        
     def is_moving(self):
-        return self.moving
+
+        print(self.get_status())
+        return self.channel.IsDeviceBusy
 
     def get_pos_mm(self):
+        self.channel.RequestPosition()
+        import time
+        while str(self.channel.Position) == '0':
+            time.sleep(0.05)
+            #print(self.channel.Position)
         return self.channel.Position
+
+    def get_status(self):
+        self.channel.RequestStatusBits()
+        status = int(self.channel.GetStatusBits())
+
+        return {
+            "raw": hex(status),
+            "cw_limit": bool(status & 0x01),
+            "ccw_limit": bool(status & 0x02),
+            "moving_cw": bool(status & 0x10),
+            "moving_ccw": bool(status & 0x20),
+            "jogging_cw": bool(status & 0x40),
+            "jogging_ccw": bool(status & 0x80),
+            "homing": bool(status & 0x200),
+            "homed": bool(status & 0x400),
+            "active": bool(status & 0x20000000),
+            "enabled": bool(status & 0x80000000),
+        }
 
 
 @attr.s(auto_attribs=True)
@@ -80,7 +110,7 @@ class DelayLine(IDelayLine):
 
 if __name__ == "__main__":
     dl = DelayLine("ExtDelay")
-
+    print(dl.get_status())
     print(dl.get_pos_mm())
     #print(dl.move_mm(30))
     #while dl.is_moving():

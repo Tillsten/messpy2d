@@ -69,6 +69,9 @@ class AOMTwoDPlan(ScanPlan):
     last_ir: Optional[np.ndarray] = None
     last_2d: Optional[Tuple[np.ndarray, np.ndarray]] = None
 
+    # Threads 
+    save_threads: list[threading.Thread] = attr.Factory(list)
+
     # Signals
     sigStepDone: ClassVar[Signal] = Signal()
     sigNewSpectra: ClassVar[Signal] = Signal(dict)
@@ -117,7 +120,10 @@ class AOMTwoDPlan(ScanPlan):
         c = self.controller
         for self.t2_idx, self.cur_t2 in enumerate(self.t2):
             c.delay_line.set_pos(self.cur_t2 * 1000, do_wait=True)
-
+            for thr in self.save_threads:
+                thr.join()
+            self.save_threads.clear()
+            
             yield from self.measure_point()
             self.time_tracker.point_ending()
             self.sigStepDone.emit()
@@ -157,9 +163,9 @@ class AOMTwoDPlan(ScanPlan):
                         if scan == "mean":
                             continue
                         ifr = f"ifr_data/{line}/{t3_idx}/{scan}"
-                        data.append(f[ifr])
+                        data.append(f[ifr][:])
                         spec = f"2d_data/{line}/{t3_idx}/{scan}"
-                        specs.append(f[spec])
+                        specs.append(f[spec][:])
                     if "mean" in f[f"ifr_data/{line}/{t3_idx}/"]:  # type: ignore
                         del f[f"ifr_data/{line}/{t3_idx}/mean"]
                         del f[f"2d_data/{line}/{t3_idx}/mean"]
@@ -205,6 +211,7 @@ class AOMTwoDPlan(ScanPlan):
             ),
         )
         thr.start()
+        self.save_threads.append(thr)
 
     def save_data(self, ret, t2_idx, cur_scan):
         cur_date = datetime.now().isoformat()

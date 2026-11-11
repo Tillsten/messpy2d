@@ -144,6 +144,12 @@ class AdaptiveTZStarter(PlanStartDialog):
     viewer = AdaptiveTZViewer
 
     def setup_paras(self):
+        has_second_dl = self.controller.delay_line_second is not None
+
+        if has_second_dl:
+            stages = [self.controller.delay_line._dl.name, self.controller.delay_line_second._dl.name]
+        else:
+            stages = [self.controller.delay_line._dl.name,]
         params = [
             dict(name="Filename", type="str", value="temp_tz"),
             dict(name="Max. Diff", type="float", value=3),            
@@ -153,6 +159,12 @@ class AdaptiveTZStarter(PlanStartDialog):
             dict(name="Min. Step", type="float", value=0.02),
             dict(name="Mode", type="list", limits=["mean", "max"]),
             dict(name="Shots", type="int", value=100),
+            dict(name="Main Delay Line",
+                 type="list",
+                 limits=stages,
+                 value=stages[0],
+                 enabled=has_second_dl,
+                 visible=has_second_dl),
         ]
 
         two_d = {"name": "Exp. Settings", "type": "group", "children": params}
@@ -164,9 +176,14 @@ class AdaptiveTZStarter(PlanStartDialog):
     def create_plan(self, controller: "Controller"):
         p = self.paras.child("Exp. Settings")
         self.save_defaults()
+        stages = [self.controller.delay_line._dl.name, self.controller.delay_line_second._dl.name]
+        if p["Main Delay Line"] == stages[0]:
+            dl = self.controller.delay_line
+        elif p["Main Delay Line"] == stages[1]:
+            dl = self.controller.delay_line_second
         plan = AdaptiveTimeZeroPlan(
             cam=controller.cam,
-            delay_line=controller.delay_line,
+            delay_line=dl,
             max_diff=p["Max. Diff"],            
             name=p["Filename"],
             meta=make_entry(self.paras),

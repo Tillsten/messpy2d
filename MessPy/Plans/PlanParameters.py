@@ -27,7 +27,7 @@ class SampleParameter(GroupParameter):
 
 class DelayParameter(GroupParameter):
     def __init__(self, **opts):
-        opts["type"] = "list"
+        #opts["type"] = "list"
         opts["value"] = True
         if "name" not in opts:
             opts["name"] = "Delay Times"

@@ -468,7 +468,7 @@ class DelayLineControl(QGroupBox):
         super(DelayLineControl, self).__init__()
         dl = c.delay_line
         dl1c = ControlFactory(
-            "Delay 1",
+            dl._dl.name,
             lambda x: c.delay_line.set_pos(x, do_wait=False),
             format_str="%.1f fs",
             extra_buttons=[("Set Home", dl.set_home)],
@@ -482,10 +482,12 @@ class DelayLineControl(QGroupBox):
         if c.delay_line_second:
             dl2 = c.delay_line_second
             dl2c = ControlFactory(
-                "Delay 2",
+                dl2._dl.name,
                 dl2.set_pos,
                 format_str="%.1f fs",
-                extra_buttons=[("Set Home", dl2.set_pos)],
+                extra_buttons=[("Set Home", dl2.set_home)],
+                presets=[-50000, -10000, -1000.0001, -50, 50000, 10000, 1000.0001, 50],
+                        preset_func=lambda x: dl2.set_pos(dl2.get_pos() + x, do_wait=False),
             )
             dls.append(dl2c)
             dl2.sigPosChanged.connect(dl2c.update_value)
@@ -503,7 +505,7 @@ def start_app():
 
     setConfigOption("antialias", True)
     app = mkQApp()
-
+    app.setStyle("fusion")
 
     app.setOrganizationName("USD")
     app.setApplicationName("MessPy3")

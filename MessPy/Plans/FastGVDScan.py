@@ -11,7 +11,7 @@ from MessPy.Instruments.dac_px import AOM
 from MessPy.Plans.PlanBase import Plan
 
 
-@attr.s(auto_attribs=True, cmp=False)
+@attr.s(auto_attribs=True, eq=True)
 class FastGVDScan(Plan):
     """Fast GVD scan plan.
 

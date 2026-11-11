@@ -15,6 +15,7 @@ dispersion_params = [
     dict(name="fod", type="float", value=0),
     dict(name="center", type="float", value=2000, decimals=5),
     dict(name="Phase Sign", type="float", value=1.0),
+    dict(name="Bragg correction", type="bool", value=True),
 ]
 
 
@@ -62,7 +63,7 @@ class ShaperControl(QtWidgets.QWidget):
         )
         self.slider.setValue(int(self.aom.amp_fac * 1000))
         self.slider.valueChanged.connect(lambda x: self.aom.set_wave_amp(x / 1000))
-
+        self.aom.set_wave_amp(self.aom.amp_fac)
         calib_label = QtWidgets.QLabel()
 
         def f(x):
@@ -121,7 +122,6 @@ class ShaperControl(QtWidgets.QWidget):
 
         self.setLayout(
             hlay(
-                vlay("<h2>Motors</h2>", *rot_controls),
                 vlay(
                     "<h2>AOM</h2>",
                     "<h3>Power</h3>",
@@ -133,7 +133,8 @@ class ShaperControl(QtWidgets.QWidget):
                     self.pt,
                     hlay(self.sc, self.sc2),
                     hlay((self.apply, self.cali)),
-                )
+                ),
+                vlay("<h2>Motors</h2>", *rot_controls),
             )
         )
 
@@ -143,6 +144,7 @@ class ShaperControl(QtWidgets.QWidget):
             setattr(self.aom, i, self.disp_param[i] * 1000)
         self.aom.nu0_THz = cm2THz(self.disp_param["center"])
         self.aom.phase_sign = self.disp_param["Phase Sign"]
+        self.aom.mode = "bragg" if self.disp_param["Bragg correction"] else "classic"
         self.aom.update_dispersion_compensation()
 
     @Slot()

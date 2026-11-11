@@ -50,7 +50,7 @@ elif pc_name == "DESKTOP-BBLLUO7":
             from MessPy.Instruments.cam_phasetec import PhaseTecCam
 
             global _cam
-            _cam = PhaseTecCam()
+            _cam = PhaseTecCam(frame_channel=1) # 1 is for the visible chopper, zero for the AOM.
             tmp_shots = _cam.shots
             _cam.set_shots(10)
             _cam.read_cam()
@@ -61,18 +61,19 @@ elif pc_name == "DESKTOP-BBLLUO7":
             raise e
         # _cam = CamMock()
 
-    # from MessPy.Instruments.delay_line_apt import DelayLine
-    # _dl = DelayLine(name="VisDelay")
+
     # from MessPy.Instruments.delay_dg535 import GeneratorDelayline
 
     # _dl = GeneratorDelayline(port='COM10')
 
     def init_dl():
-        logger.info("Importing and initializing NewportDelay")
+        #logger.info("Importing and initializing NewportDelay")
         from MessPy.Instruments.delay_line_newport import NewportDelay
+        from MessPy.Instruments.delay_line_apt import DelayLine
 
-        global _dl
-        _dl = NewportDelay(name="IR Delay", pos_sign=-1)
+        global _dl, _dl2
+        _dl = NewportDelay(name="IR Delay", pos_sign=-1, comport="COM7")
+        _dl2 = DelayLine(name="VisDelay")
 
     def init_aom():
         logger.info("Importing and initializing AOM")

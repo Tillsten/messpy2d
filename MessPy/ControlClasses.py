@@ -222,7 +222,7 @@ class Controller(QObject):
 
     cam: Cam = attrib(init=False)
     delay_line: DelayLine = Factory(lambda: DelayLine(_dl))
-    delay_line_second: T.Optional[DelayLine] = None
+    delay_line_second: T.Optional[DelayLine] = Factory(lambda: DelayLine(_dl2) if _dl2 else None)
     cam2: T.Optional[Cam] = attrib(init=False)
     cam_list: T.List[Cam] = Factory(list)
     shutter: T.List[I.IShutter] = _shutter

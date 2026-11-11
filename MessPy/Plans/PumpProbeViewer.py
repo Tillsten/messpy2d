@@ -290,6 +290,12 @@ class PumpProbeStarter(PlanStartDialog):
     def setup_paras(self):
         has_rot = self.controller.rot_stage is not None
         has_shutter = self.controller.shutter is not None
+        has_second_dl = self.controller.delay_line_second is not None
+
+        if has_second_dl:
+            stages = [self.controller.delay_line._dl.name, self.controller.delay_line_second._dl.name]
+        else:
+            stages = [self.controller.delay_line._dl.name,]
 
         tmp = [
             {"name": "Filename", "type": "str", "value": "temp"},
@@ -303,7 +309,14 @@ class PumpProbeStarter(PlanStartDialog):
                 "step": 500,
                 "value": 100,
             },
+
             DelayParameter(),
+            dict(name="Main Delay Line",
+                 type="list",
+                 limits=stages,
+                 value=stages[0],
+                 enabled=has_second_dl,
+                 visible=has_second_dl),
             dict(
                 name="Use Shutter",
                 type="bool",
@@ -386,6 +399,12 @@ class PumpProbeStarter(PlanStartDialog):
             p_shutter = p["Pump Shutter"]
         else:
             p_shutter = None
+
+        stages = [self.controller.delay_line._dl.name, self.controller.delay_line_second._dl.name]
+        if p["Main Delay Line"] == stages[0]:
+            dl = self.controller.delay_line
+        elif p["Main Delay Line"] == stages[1]:
+            dl = self.controller.delay_line_second
         p = PumpProbePlan(
             name=p["Filename"],
             meta=make_entry(self.paras),
@@ -394,6 +413,7 @@ class PumpProbeStarter(PlanStartDialog):
             controller=controller,
             center_wl_list=cwls,
             pump_shutter=p_shutter,
+            main_delay_line=dl,
             use_rot_stage=p["Use Rotation Stage"],
             rot_stage_angles=angles,
             save_full_data=p["Save Full Data"],
