@@ -2,7 +2,11 @@ import platform
 import typing as T
 
 import attr
+import typing as T
+
+import attr
 from loguru import logger
+from PySide6.QtWidgets import QApplication
 from PySide6.QtWidgets import QApplication
 
 from MessPy.Config import config
@@ -203,9 +207,30 @@ class Hardware:
         #    self.shutter.append(PhidgetShutter())
         # except ImportError:
         #    logger.warning("PhidgetShutter import failed")
+        #    self.shutter.append(PhidgetShutter())
+        # except ImportError:
+        #    logger.warning("PhidgetShutter import failed")
 
         # from MessPy.Instruments.stage_smartact import SmarActXYZ
+        # from MessPy.Instruments.stage_smartact import SmarActXYZ
 
+        # self.sh = SmarActXYZ()
+        self.power_meter = None
+        # try:
+        #    from MessPy.Instruments.cam_power import PowerCam
+        #    self.power_meter = PowerCam()
+        # except:
+        #    self.power_meter = None
+        # try:
+        #    from MessPy.Instruments.ophire import Starbright
+        #    self.power_meter = Starbright()
+        # except:
+        # self.power_meter = None
+
+
+hw = Hardware()
+
+TESTING = config.testing
         # self.sh = SmarActXYZ()
         self.power_meter = None
         # try:

@@ -3,8 +3,14 @@ import threading
 from collections.abc import Generator
 from typing import TYPE_CHECKING, ClassVar, Optional
 
+import json
+import threading
+from collections.abc import Generator
+from typing import TYPE_CHECKING, ClassVar, Optional
+
 import numpy as np
 from attr import Factory, attrib, attrs
+from loguru import logger
 from loguru import logger
 from numpy._typing import NDArray
 from PySide6.QtCore import QObject, Signal
@@ -30,9 +36,13 @@ class PumpProbePlan(Plan):
 
     plan_shorthand: str = "PumpProbe"
     center_wl_list: list[list[float]] = [[0]]
+    center_wl_list: list[list[float]] = [[0]]
     pump_shutter: Optional["IShutter"] = None
     cam_data: list["PumpProbeData"] = attrib(init=False)
+    cam_data: list["PumpProbeData"] = attrib(init=False)
     use_rot_stage: bool = False
+    rot_stage_angles: list | None = None
+    rot_at_scan: list[float] = Factory(list)
     rot_stage_angles: list | None = None
     rot_at_scan: list[float] = Factory(list)
     time_per_scan: str = ""
@@ -50,6 +60,7 @@ class PumpProbePlan(Plan):
             return np.lcm(*map(len, self.center_wl_list))
 
     def __attrs_post_init__(self):
+        super().__attrs_post_init__()
         super().__attrs_post_init__()
         gen = self.make_step_gen()
         self.make_step = lambda: next(gen)
@@ -193,6 +204,7 @@ class PumpProbeData(QObject):
     cam: "Cam"
     plan: PumpProbePlan
     cwl: list[float] = attrib()
+    cwl: list[float] = attrib()
     t_list: np.ndarray
     scan: int = 0
     delay_scans: int = 0
@@ -201,7 +213,11 @@ class PumpProbeData(QObject):
 
     last_signal: np.ndarray | None = None
     mean_signal: np.ndarray | None = None
+    last_signal: np.ndarray | None = None
+    mean_signal: np.ndarray | None = None
     current_scan: NDArray = attrib(init=False)
+    mean_scans: np.ndarray | None = None
+    completed_scans: np.ndarray | None = None
     mean_scans: np.ndarray | None = None
     completed_scans: np.ndarray | None = None
     wavelengths: np.ndarray = attrib(init=False)
@@ -211,6 +227,7 @@ class PumpProbeData(QObject):
     sigStepDone = Signal()
 
     def __attrs_post_init__(self):
+        super().__init__()
         super().__init__()
         num_sig = self.cam.sig_lines
         num_wl = len(self.cwl)

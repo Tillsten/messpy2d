@@ -21,15 +21,21 @@ Reading = I.Reading
 @attrs(cmp=False, auto_attribs=True)
 class Cam(QObject):
     cam: I.ICam = hw.cam
+    cam: I.ICam = hw.cam
 
     disp_wavelengths: bool = True
 
     shots: int = attrib(init=False)
 
     last_read: I.Reading | None = attrib(init=False)
+    last_read: I.Reading | None = attrib(init=False)
     wavelengths: np.ndarray = attrib(init=False)
     wavenumbers: np.ndarray = attrib(init=False)
     disp_axis: np.ndarray = attrib(init=False)
+    sig_lines: list[str] = attrib(init=False)
+    std_lines: list[str] = attrib(init=False)
+    name: str = attrib(init=False)
+    has_ref: bool = attrib(init=False)
     sig_lines: list[str] = attrib(init=False)
     std_lines: list[str] = attrib(init=False)
     name: str = attrib(init=False)

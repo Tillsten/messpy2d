@@ -3,9 +3,11 @@ import concurrent.futures
 from math import log
 from pathlib import Path
 from typing import ClassVar
+from typing import ClassVar
 
 import attr
 import numpy as np
+from PySide6.QtCore import Signal
 from PySide6.QtCore import Signal
 from scipy.stats import trim_mean
 
@@ -41,6 +43,7 @@ def _back_default():
     try:
         return np.load(Path(__file__).parent / "back.npy")
     except OSError:
+    except OSError:
         return None
 
 
@@ -51,6 +54,7 @@ TWO_PROBES = True
 class PhaseTecCam(ICam):
     spectrograph: SP2150i = attr.Factory(SP2150i)
     rows: dict[str, tuple[int, int]] = row_defaults
+    rows: dict[str, tuple[int, int]] = row_defaults
     name: str = "Phasetec Array"
     shots: int = 50
     has_ref: bool = True
@@ -58,13 +62,19 @@ class PhaseTecCam(ICam):
     line_names: list[str] = ["Probe1", "Probe2", "Ref", "max"]
     std_names: list[str] = ["Probe1", "Probe2", "Ref", "Probe/Ref"]
     sig_names: list[str] = ["SigNoRef", "Sig", "Sig2NoRef", "Sig2"]
+    line_names: list[str] = ["Probe1", "Probe2", "Ref", "max"]
+    std_names: list[str] = ["Probe1", "Probe2", "Ref", "Probe/Ref"]
+    sig_names: list[str] = ["SigNoRef", "Sig", "Sig2NoRef", "Sig2"]
 
+    beta1: np.ndarray | None = None
+    beta2: np.ndarray | None = None
     beta1: np.ndarray | None = None
     beta2: np.ndarray | None = None
     channels: int = 128
     ext_channels: int = 0
     changeable_wavelength: bool = True
     changeable_slit: bool = False
+    background: np.ndarray | None = attr.Factory(_back_default)
     background: np.ndarray | None = attr.Factory(_back_default)
     can_validate_pixel: bool = True
     valid_pixel: dict[str, np.ndarray] | None = None
@@ -117,6 +127,7 @@ class PhaseTecCam(ICam):
 
     def get_spectra(
         self, frames=None, **kwargs
+    ) -> tuple[dict[str, Spectrum], np.ndarray]:
     ) -> tuple[dict[str, Spectrum], np.ndarray]:
 
         arr, ch = self._cam.read_cam(back=self.background, lines=self.rows)
@@ -208,6 +219,7 @@ class PhaseTecCam(ICam):
                 shots=self.shots,
                 valid=True,
             )
+            )
         return reading
 
     def make_2D_reading(
@@ -216,6 +228,7 @@ class PhaseTecCam(ICam):
         rot_frame: float,
         repetitions: int = 1,
         save_frames: bool = False,
+    ) -> tuple[dict[str, Reading2D], dict[str, Spectrum]]:
     ) -> tuple[dict[str, Reading2D], dict[str, Spectrum]]:
         spectra, ch = self.get_spectra(frames=self.shots // repetitions, get_max=False)
 
